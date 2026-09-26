@@ -1,0 +1,27 @@
+{
+  "name": "enterprise-agent-framework",
+  "version": "0.1.0-workspace",
+  "private": true,
+  "description": "Enterprise AI Agent Framework for TypeScript/Node.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "pnpm -r --parallel --filter '**' run build",
+    "typecheck": "tsc -b",
+    "typecheck:all": "pnpm -r --parallel --filter '**' run typecheck",
+    "test": "vitest run --config vitest.workspaces.config.ts",
+    "test:packages": "pnpm -r --parallel --filter '**' run test",
+    "dev": "tsc -b --watch",
+    "example:hello": "npx tsx examples/hello-agent/index.ts"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.12.0",
+  "pnpm": {
+    "overrides": {},
+    "packageExtensions": {}
+  },
+  "devDependencies": {
+    "zod": "^4.6.5"
+  }
+}

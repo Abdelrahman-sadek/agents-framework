@@ -1,0 +1,14 @@
+export default {
+  test: {
+    globals: true,
+    environment: 'node',
+    resolve: {
+      alias: {
+        '@agent-framework/core': `${process.cwd()}/packages/core/src`,
+        '@agent-framework/tools': `${process.cwd()}/packages/tools/src`,
+      },
+    },
+    include: ['src/**/*.test.ts'],
+    coverage: { provider: 'v8', reporter: ['text', 'html', 'lcov'] },
+  },
+};

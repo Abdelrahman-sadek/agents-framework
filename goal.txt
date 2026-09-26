@@ -1,0 +1,1851 @@
+# Enterprise AI Agent Framework — Master Development Prompt
+
+## ROLE
+
+You are a Principal AI Systems Architect, Staff TypeScript/Node.js Engineer, and Enterprise AI Agent Framework designer.
+
+Your task is to design and implement a production-grade, extensible **Enterprise AI Agent Framework** that allows application developers to build reliable AI Agents without reinventing the underlying infrastructure every time.
+
+The framework must provide standardized abstractions and runtime capabilities for:
+
+1. LLM fundamentals
+2. Tool calling
+3. Structured outputs
+4. Context management
+5. RAG / Knowledge
+6. Memory
+7. Planning
+8. Reflection / Verification
+9. Orchestrator / Worker architecture
+10. Multi-Agent systems
+11. Guardrails and Security
+12. Observability
+13. Evaluation
+14. Production architecture
+
+The framework will primarily target **Node.js + TypeScript**.
+
+Do not build a toy chatbot framework.
+
+Build a serious foundation that could eventually be used by multiple teams to build many different enterprise agents.
+
+---
+
+# 1. CORE TECHNOLOGY DECISION
+
+Use:
+
+* Node.js
+* TypeScript
+* Modern ESM architecture
+* Strict TypeScript configuration
+* Zod or an equivalent schema-validation library
+* PostgreSQL as the primary relational persistence layer
+* Redis where appropriate for caching, queues, locks, and ephemeral state
+* OpenTelemetry-compatible observability
+* Pluggable LLM providers
+* Pluggable vector/database providers
+* Pluggable storage providers
+
+The framework MUST NOT be tightly coupled to one LLM provider.
+
+It must support an abstraction similar to:
+
+```text
+Agent
+  ↓
+LLM Provider Interface
+  ↓
+OpenAI / Anthropic / Gemini / OpenRouter / Local Model / Other
+```
+
+The same principle must apply to:
+
+* Vector databases
+* Embedding providers
+* Storage
+* Queue systems
+* Observability
+* Authentication
+* Memory stores
+
+Do not hard-code a single vendor into the core architecture.
+
+---
+
+# 2. FIRST PHASE — DO NOT WRITE IMPLEMENTATION CODE YET
+
+Before writing significant implementation code:
+
+## Step 1 — Analyze the problem
+
+Explain:
+
+* What an enterprise AI Agent framework needs
+* What should belong to the framework
+* What should remain application-specific
+* What should be deterministic software instead of LLM behavior
+* Where agents should and should not be used
+* Major architectural risks
+* Security risks
+* Reliability risks
+* Cost risks
+* Latency risks
+* Vendor lock-in risks
+
+## Step 2 — Study existing approaches
+
+If internet access is available, research current relevant technologies and architectures.
+
+Inspect current approaches from projects/ecosystems such as:
+
+* LangChain / LangGraph
+* OpenAI Agents SDK
+* Anthropic agent/tool-use patterns
+* Vercel AI SDK
+* Microsoft Agent Framework / AutoGen ecosystem
+* Mastra
+* Temporal
+* OpenTelemetry
+* MCP
+* popular TypeScript agent frameworks
+
+Do NOT copy them blindly.
+
+Identify:
+
+* What they solve well
+* What they do not solve
+* What should be reused conceptually
+* What should be avoided
+* Where our framework can provide a cleaner enterprise abstraction
+
+Do not turn the project into a wrapper around another framework unless there is a compelling architectural reason.
+
+---
+
+# 3. WRITE THE ARCHITECTURE BEFORE IMPLEMENTATION
+
+Create:
+
+```text
+docs/
+  architecture/
+  decisions/
+  security/
+  concepts/
+  examples/
+```
+
+Create a complete architecture document.
+
+At minimum explain:
+
+```text
+Application
+    ↓
+Agent Framework
+    ↓
+Agent Runtime
+    ↓
+Orchestrator
+    ↓
+Planning
+    ↓
+Workers
+    ↓
+Tools
+    ↓
+External Systems
+```
+
+And:
+
+```text
+Agent Runtime
+ ├── LLM Gateway
+ ├── Tool Runtime
+ ├── Context Engine
+ ├── Memory
+ ├── Knowledge / RAG
+ ├── Planner
+ ├── Reflection / Verification
+ ├── Orchestration
+ ├── Security
+ ├── Guardrails
+ ├── Observability
+ ├── Evaluation
+ └── Persistence
+```
+
+---
+
+# 4. FRAMEWORK DESIGN PRINCIPLE
+
+The developer experience should be extremely simple.
+
+A developer should eventually be able to create an agent approximately like:
+
+```typescript
+const agent = defineAgent({
+  name: "research-agent",
+
+  model: models.openai("..."),
+
+  instructions: `
+    You are a research agent.
+    ...
+  `,
+
+  tools: [
+    searchTool,
+    databaseTool,
+    calculatorTool
+  ],
+
+  memory: memory.user(),
+
+  knowledge: knowledge.base("company-documents"),
+
+  output: ResearchReportSchema
+});
+```
+
+Then:
+
+```typescript
+const result = await agent.run({
+  input: "Research..."
+});
+```
+
+The framework should handle the complexity underneath.
+
+---
+
+# 5. CORE PRINCIPLES
+
+The framework must follow these principles:
+
+## 5.1 Provider independence
+
+No core component should depend directly on a specific AI vendor.
+
+Use interfaces/adapters.
+
+Example:
+
+```typescript
+interface LLMProvider {
+  generate(...): Promise<LLMResponse>;
+  stream(...): AsyncIterable<LLMEvent>;
+}
+```
+
+---
+
+## 5.2 Strong typing
+
+Use TypeScript aggressively.
+
+Avoid:
+
+```typescript
+any
+```
+
+unless absolutely unavoidable.
+
+Use schemas for runtime validation.
+
+---
+
+## 5.3 Explicit state
+
+Agent execution state must be explicit.
+
+Example:
+
+```typescript
+interface AgentState {
+  runId: string;
+  agentId: string;
+  status: AgentStatus;
+  input: unknown;
+  context: ContextState;
+  plan?: Plan;
+  steps: ExecutionStep[];
+  memory?: MemoryState;
+  metadata: Record<string, unknown>;
+}
+```
+
+---
+
+## 5.4 Deterministic core
+
+LLMs should not control:
+
+* authorization
+* security policies
+* billing
+* permissions
+* irreversible actions
+* audit logging
+* system invariants
+
+The framework must enforce these deterministically.
+
+---
+
+# 6. LLM GATEWAY
+
+Create a unified LLM abstraction.
+
+Requirements:
+
+* Multiple providers
+* Model selection
+* Streaming
+* Structured output
+* Tool calling
+* Token usage
+* Cost tracking
+* Retries
+* Timeouts
+* Rate limits
+* Fallback models
+* Model capabilities
+* Error normalization
+
+Example:
+
+```typescript
+const response = await llm.generate({
+  model,
+  messages,
+  tools,
+  outputSchema
+});
+```
+
+The framework must normalize provider-specific differences.
+
+---
+
+# 7. TOOL SYSTEM
+
+Design a first-class Tool system.
+
+A tool should contain:
+
+```typescript
+defineTool({
+  name,
+  description,
+  inputSchema,
+  execute,
+  permissions,
+  timeout,
+  retryPolicy
+});
+```
+
+Tool execution must support:
+
+* Schema validation
+* Authorization
+* Timeout
+* Retry
+* Rate limiting
+* Logging
+* Tracing
+* Error handling
+* Idempotency
+* Audit trail
+* Human approval where required
+
+Important principle:
+
+```text
+LLM requests an action
+        ↓
+Framework validates request
+        ↓
+Authorization
+        ↓
+Guardrails
+        ↓
+Tool execution
+        ↓
+Result validation
+        ↓
+Audit
+```
+
+Never allow the LLM to bypass the tool runtime.
+
+---
+
+# 8. STRUCTURED OUTPUTS
+
+Provide a standard mechanism for:
+
+```typescript
+output: MySchema
+```
+
+The framework should:
+
+1. Ask the model for structured output
+2. Parse it
+3. Validate it
+4. Retry/correct if appropriate
+5. Return typed data
+6. Record validation failures
+
+Example:
+
+```typescript
+const ReportSchema = z.object({
+  summary: z.string(),
+  findings: z.array(z.string()),
+  confidence: z.number().min(0).max(1)
+});
+```
+
+---
+
+# 9. CONTEXT MANAGEMENT
+
+Build a dedicated Context Engine.
+
+Do NOT simply send the entire conversation to the model.
+
+The Context Engine should manage:
+
+* System instructions
+* Agent instructions
+* User input
+* Conversation history
+* Relevant memories
+* Relevant knowledge
+* Tool results
+* Current task state
+* Previous execution state
+* Summaries
+* Token budgets
+* Context priorities
+
+Implement context selection/compression strategies.
+
+Concept:
+
+```text
+Available Information
+        ↓
+Relevance
+        ↓
+Priority
+        ↓
+Token Budget
+        ↓
+Final Model Context
+```
+
+The framework must support context policies.
+
+Example:
+
+```typescript
+context: {
+  maxTokens: 16000,
+  includeMemory: true,
+  includeToolHistory: false,
+  summarizeHistoryAfter: 20
+}
+```
+
+---
+
+# 10. RAG / KNOWLEDGE SYSTEM
+
+Create a provider-independent Knowledge abstraction.
+
+Support:
+
+```text
+Documents
+ ↓
+Parsing
+ ↓
+Chunking
+ ↓
+Metadata
+ ↓
+Embeddings
+ ↓
+Vector / Hybrid Search
+ ↓
+Retrieval
+ ↓
+Context
+```
+
+Support:
+
+* Documents
+* Metadata
+* Chunking strategies
+* Embeddings
+* Vector search
+* Keyword search
+* Hybrid search
+* Metadata filtering
+* Reranking
+* Citation tracking
+
+The framework must preserve document/source identity so generated answers can reference evidence.
+
+---
+
+# 11. MEMORY SYSTEM
+
+Separate memory from knowledge.
+
+Support:
+
+### Short-term memory
+
+Current execution.
+
+### Conversation memory
+
+Previous conversation.
+
+### User memory
+
+Long-lived user preferences/facts.
+
+### Entity memory
+
+Information about organizations, projects, customers, etc.
+
+### Episodic memory
+
+Important previous events.
+
+### Semantic memory
+
+Extracted reusable knowledge.
+
+Memory operations:
+
+```typescript
+memory.get(...)
+memory.search(...)
+memory.store(...)
+memory.update(...)
+memory.delete(...)
+```
+
+Memory must have:
+
+* TTL
+* Scope
+* Ownership
+* Permissions
+* Metadata
+* Confidence
+* Provenance
+* Lifecycle management
+
+Do not automatically save everything.
+
+Memory should have policies determining what deserves persistence.
+
+---
+
+# 12. PLANNING SYSTEM
+
+Implement a Planner abstraction.
+
+Support plans such as:
+
+```text
+Task
+ ↓
+Plan
+ ↓
+Steps
+ ↓
+Execution
+ ↓
+Observation
+ ↓
+Re-plan
+```
+
+A plan should be structured:
+
+```typescript
+interface Plan {
+  goal: string;
+  steps: PlanStep[];
+}
+```
+
+Each step should have:
+
+* ID
+* Description
+* Dependencies
+* Status
+* Worker/agent
+* Inputs
+* Outputs
+* Retry policy
+* Timeout
+
+Support dynamic re-planning.
+
+Do not require the LLM to generate the entire execution graph blindly.
+
+---
+
+# 13. REFLECTION / VERIFICATION
+
+Implement verification as a first-class capability.
+
+Support:
+
+```text
+Generate
+ ↓
+Verify
+ ↓
+Correct
+```
+
+Verification strategies should include:
+
+* Schema validation
+* Rule validation
+* Tool-based verification
+* Source verification
+* Deterministic checks
+* LLM-based critic
+* Cross-agent verification
+
+Make reflection configurable:
+
+```typescript
+reflection: {
+  enabled: true,
+  strategy: "verify",
+  maxAttempts: 2
+}
+```
+
+Do not use reflection unnecessarily because it increases cost and latency.
+
+---
+
+# 14. ORCHESTRATOR / WORKER MODEL
+
+Implement an Orchestrator abstraction.
+
+The Orchestrator manages:
+
+* Tasks
+* Plans
+* Workers
+* Dependencies
+* Parallel execution
+* Sequential execution
+* Failures
+* Retries
+* Timeouts
+* Re-planning
+* Final aggregation
+
+Example:
+
+```text
+                Orchestrator
+                     |
+       ┌─────────────┼─────────────┐
+       ↓             ↓             ↓
+ Research Worker  Data Worker  Analysis Worker
+       |             |             |
+       └─────────────┼─────────────┘
+                     ↓
+                Verification
+                     ↓
+                  Result
+```
+
+Workers should be isolated and have limited permissions/tools.
+
+---
+
+# 15. MULTI-AGENT SYSTEM
+
+Multi-agent must be optional.
+
+Do NOT make every task multi-agent.
+
+Support:
+
+```typescript
+defineAgent(...)
+defineWorker(...)
+defineOrchestrator(...)
+```
+
+Possible patterns:
+
+* Supervisor
+* Worker pool
+* Pipeline
+* Debate
+* Specialist agents
+* Hierarchical agents
+
+But the framework should encourage the simplest architecture that solves the problem.
+
+---
+
+# 16. GUARDRAILS
+
+Implement input and output guardrails.
+
+Examples:
+
+```text
+Input
+ ↓
+Input Guardrails
+ ↓
+Agent
+ ↓
+Output Guardrails
+ ↓
+Tool Authorization
+ ↓
+Action
+```
+
+Guardrails should support:
+
+* Content validation
+* PII detection
+* Prompt injection detection
+* Data access restrictions
+* Output validation
+* Tool restrictions
+* Policy checks
+
+Guardrails must not rely exclusively on an LLM.
+
+---
+
+# 17. SECURITY
+
+Treat security as a core subsystem.
+
+Implement concepts for:
+
+* Authentication
+* Authorization
+* RBAC
+* ABAC where useful
+* Tenant isolation
+* Secret management
+* Tool permissions
+* Data permissions
+* Audit logs
+* Prompt injection protection
+* SSRF protection
+* Rate limiting
+* Resource limits
+
+Important:
+
+The Agent must never be trusted simply because it is an internal component.
+
+Use:
+
+```text
+Agent Identity
++
+User Identity
++
+Tenant
++
+Permissions
+```
+
+for authorization decisions.
+
+---
+
+# 18. HUMAN-IN-THE-LOOP
+
+Support approval workflows.
+
+Example:
+
+```typescript
+await agent.run(...)
+```
+
+may produce:
+
+```text
+ACTION_REQUIRES_APPROVAL
+```
+
+The execution should pause.
+
+Human approves.
+
+Execution resumes.
+
+Support:
+
+* Approval
+* Rejection
+* Modification
+* Expiration
+* Escalation
+
+---
+
+# 19. OBSERVABILITY
+
+Implement OpenTelemetry-compatible tracing.
+
+Every execution should be traceable.
+
+Track:
+
+```text
+Agent run
+ ├── LLM call
+ ├── Tool call
+ ├── Retrieval
+ ├── Memory operation
+ ├── Worker
+ ├── Reflection
+ └── Final output
+```
+
+Record:
+
+* Latency
+* Errors
+* Token usage
+* Estimated cost
+* Model
+* Tool usage
+* Retry count
+* Context size
+* Retrieval results
+* Agent state transitions
+
+Never log sensitive data blindly.
+
+Implement configurable redaction.
+
+---
+
+# 20. EVALUATION
+
+Create an Evaluation subsystem.
+
+Developers should be able to define:
+
+```typescript
+const evaluation = defineEvaluation({
+  dataset,
+  agent,
+  evaluators: [
+    correctness,
+    groundedness,
+    toolAccuracy,
+    safety
+  ]
+});
+```
+
+Support:
+
+* Golden datasets
+* Regression testing
+* LLM-as-judge
+* Deterministic evaluators
+* Tool-use evaluation
+* Retrieval evaluation
+* Safety evaluation
+* Cost evaluation
+* Latency evaluation
+
+Generate evaluation reports.
+
+---
+
+# 21. PRODUCTION RUNTIME
+
+The framework must distinguish between:
+
+```text
+Development
+Testing
+Production
+```
+
+Production requirements:
+
+* Graceful shutdown
+* Retry policies
+* Timeouts
+* Circuit breakers
+* Rate limits
+* Queue support
+* Distributed execution
+* Idempotency
+* Persistence
+* Job recovery
+* Failure recovery
+* Configuration management
+* Health checks
+
+Long-running agent tasks should not depend on one HTTP request remaining open.
+
+Design for:
+
+```text
+API
+ ↓
+Create Agent Run
+ ↓
+Queue
+ ↓
+Worker
+ ↓
+Persistent State
+ ↓
+Execution
+ ↓
+Result
+```
+
+Consider Temporal or another durable workflow engine if appropriate, but keep the core framework decoupled from it.
+
+---
+
+# 22. MCP SUPPORT
+
+Design the Tool system so that MCP can be integrated cleanly.
+
+MCP should be an adapter/protocol integration, not the core abstraction.
+
+Concept:
+
+```text
+Framework Tool
+      │
+      ├── Native Tool
+      ├── HTTP Tool
+      ├── Database Tool
+      ├── MCP Tool
+      └── Internal Service Tool
+```
+
+---
+
+# 23. PROJECT STRUCTURE
+
+Design a clean modular monorepo.
+
+A possible starting point:
+
+```text
+packages/
+
+  core/
+  llm/
+  tools/
+  context/
+  memory/
+  knowledge/
+  planning/
+  reflection/
+  orchestration/
+  agents/
+  security/
+  guardrails/
+  observability/
+  evaluation/
+  persistence/
+  runtime/
+  mcp/
+  cli/
+
+apps/
+
+  examples/
+  playground/
+  dashboard/
+```
+
+Do not blindly follow this structure.
+
+Adjust it if your architecture analysis shows a better structure.
+
+Avoid unnecessary micro-packages.
+
+---
+
+# 24. DEVELOPER EXPERIENCE
+
+The framework must make common tasks simple.
+
+Example:
+
+```typescript
+import {
+  defineAgent,
+  defineTool,
+  models
+} from "@framework/core";
+```
+
+Then:
+
+```typescript
+const weatherTool = defineTool({
+  name: "get_weather",
+
+  description: "Get current weather",
+
+  inputSchema: z.object({
+    city: z.string()
+  }),
+
+  execute: async ({ city }) => {
+    ...
+  }
+});
+```
+
+And:
+
+```typescript
+const agent = defineAgent({
+  name: "assistant",
+
+  model: models.openai("model"),
+
+  instructions: "...",
+
+  tools: [
+    weatherTool
+  ]
+});
+```
+
+The framework should hide infrastructure complexity while keeping advanced functionality accessible.
+
+---
+
+# 25. CONFIGURATION
+
+Support configuration through typed configuration.
+
+Example:
+
+```typescript
+createFramework({
+  llm: {},
+  database: {},
+  memory: {},
+  observability: {},
+  security: {}
+});
+```
+
+Validate configuration at startup.
+
+Fail fast on invalid configuration.
+
+---
+
+# 26. ERROR MODEL
+
+Create standardized framework errors.
+
+Examples:
+
+```text
+AgentError
+ToolError
+LLMError
+ValidationError
+AuthorizationError
+ContextLimitError
+MemoryError
+KnowledgeError
+PlanningError
+ExecutionError
+ApprovalRequiredError
+```
+
+Errors should include:
+
+* Error code
+* Human-readable message
+* Cause
+* Retryability
+* Metadata
+* Correlation/run ID
+
+---
+
+# 27. TESTING STRATEGY
+
+Implement:
+
+### Unit tests
+
+For every core subsystem.
+
+### Integration tests
+
+For:
+
+* LLM
+* Database
+* Tools
+* Memory
+* RAG
+
+### Agent tests
+
+Test complete agent execution.
+
+### Security tests
+
+Test:
+
+* Unauthorized tool calls
+* Prompt injection
+* Tenant isolation
+* Data leakage
+* Permission escalation
+
+### Evaluation tests
+
+Test real agent behavior against datasets.
+
+### Failure tests
+
+Simulate:
+
+* LLM timeout
+* Tool failure
+* Database failure
+* malformed output
+* network failure
+* worker crash
+* duplicate execution
+
+---
+
+# 28. EXAMPLES
+
+Create realistic examples.
+
+At minimum:
+
+## Example 1 — Simple Agent
+
+```text
+User → Agent → Tool → Answer
+```
+
+## Example 2 — Research Agent
+
+```text
+User
+ ↓
+Plan
+ ↓
+Search
+ ↓
+Retrieve
+ ↓
+Analyze
+ ↓
+Verify
+ ↓
+Report
+```
+
+## Example 3 — RAG Agent
+
+```text
+Question
+ ↓
+Knowledge retrieval
+ ↓
+Context
+ ↓
+LLM
+ ↓
+Cited answer
+```
+
+## Example 4 — Orchestrator
+
+```text
+Orchestrator
+ ├── Research Worker
+ ├── Data Worker
+ └── Verification Worker
+```
+
+## Example 5 — Human Approval
+
+```text
+Agent
+ ↓
+Proposed Action
+ ↓
+Human Approval
+ ↓
+Tool
+```
+
+## Example 6 — Enterprise Agent
+
+Build one complete realistic example combining:
+
+* Planning
+* Tools
+* RAG
+* Memory
+* Workers
+* Reflection
+* Guardrails
+* Observability
+* Evaluation
+
+---
+
+# 29. CLI
+
+Create a developer CLI.
+
+Example:
+
+```bash
+agent create research-agent
+```
+
+```bash
+agent dev
+```
+
+```bash
+agent test
+```
+
+```bash
+agent evaluate
+```
+
+```bash
+agent inspect
+```
+
+```bash
+agent trace <run-id>
+```
+
+The CLI should help developers create and debug agents.
+
+---
+
+# 30. AGENT MANIFEST
+
+Consider introducing an Agent Manifest.
+
+Example:
+
+```yaml
+name: research-agent
+version: 1.0
+
+model:
+  provider: openai
+  model: ...
+
+tools:
+  - web-search
+  - database
+
+memory:
+  enabled: true
+
+knowledge:
+  enabled: true
+
+planning:
+  enabled: true
+
+reflection:
+  enabled: true
+
+security:
+  permissions:
+    - knowledge.read
+    - database.read
+```
+
+The exact format is up to the architecture.
+
+---
+
+# 31. VERSIONING
+
+The framework must be designed for evolution.
+
+Use semantic versioning.
+
+Avoid breaking APIs unnecessarily.
+
+Separate:
+
+```text
+Public API
+Internal API
+Experimental API
+```
+
+Mark experimental features clearly.
+
+---
+
+# 32. DOCUMENTATION
+
+Create excellent documentation.
+
+At minimum:
+
+```text
+docs/
+  getting-started.md
+  architecture.md
+  agents.md
+  tools.md
+  context.md
+  memory.md
+  knowledge.md
+  planning.md
+  reflection.md
+  orchestration.md
+  multi-agent.md
+  security.md
+  guardrails.md
+  observability.md
+  evaluation.md
+  production.md
+  troubleshooting.md
+```
+
+Also create an architectural decision record for major decisions.
+
+---
+
+# 33. IMPLEMENTATION PLAN
+
+Implement in phases.
+
+## Phase 0 — Architecture
+
+Deliver:
+
+* Architecture
+* ADRs
+* Requirements
+* Public API proposal
+* Package structure
+* Threat model
+
+Do not implement major functionality yet.
+
+---
+
+## Phase 1 — Core Runtime
+
+Implement:
+
+* Agent definition
+* Agent execution
+* State
+* Events
+* Errors
+* Configuration
+* Basic LLM abstraction
+
+Create tests.
+
+---
+
+## Phase 2 — Tool System
+
+Implement:
+
+* Tool definition
+* Schema validation
+* Execution
+* Permissions
+* Timeout
+* Retry
+* Audit events
+
+Create tests and examples.
+
+---
+
+## Phase 3 — Structured Outputs
+
+Implement:
+
+* Schema-based outputs
+* Validation
+* Retry/correction
+* Typed results
+
+---
+
+## Phase 4 — Context Engine
+
+Implement:
+
+* Context assembly
+* Token budgets
+* Message management
+* Summarization
+* Context policies
+
+---
+
+## Phase 5 — Knowledge / RAG
+
+Implement:
+
+* Documents
+* Chunking
+* Embeddings
+* Retrieval
+* Metadata
+* Citations
+* Vector provider abstraction
+
+---
+
+## Phase 6 — Memory
+
+Implement:
+
+* Short-term state
+* Conversation memory
+* Long-term memory
+* Semantic/episodic memory
+* Memory policies
+
+---
+
+## Phase 7 — Planning
+
+Implement:
+
+* Planner
+* Plans
+* Steps
+* Dependencies
+* Re-planning
+* Execution state
+
+---
+
+## Phase 8 — Reflection
+
+Implement:
+
+* Verification
+* Critic
+* Rule-based verification
+* Source verification
+* Correction loop
+
+---
+
+## Phase 9 — Orchestration
+
+Implement:
+
+* Orchestrator
+* Workers
+* Parallel execution
+* Sequential execution
+* Dependencies
+* Failure recovery
+
+---
+
+## Phase 10 — Multi-Agent
+
+Implement:
+
+* Agent-to-agent communication
+* Supervisor
+* Worker agents
+* Delegation
+* Shared/isolated context policies
+
+---
+
+## Phase 11 — Security
+
+Implement:
+
+* Identity
+* RBAC
+* Permissions
+* Tenant isolation
+* Guardrails
+* Prompt injection defenses
+* Audit logs
+
+---
+
+## Phase 12 — Observability
+
+Implement:
+
+* OpenTelemetry
+* Tracing
+* Metrics
+* Logs
+* Cost tracking
+* Run inspection
+
+---
+
+## Phase 13 — Evaluation
+
+Implement:
+
+* Dataset
+* Evaluators
+* Regression tests
+* Agent evaluation
+* Tool evaluation
+* RAG evaluation
+* Safety evaluation
+
+---
+
+## Phase 14 — Production
+
+Implement:
+
+* Persistence
+* Queues
+* Durable execution
+* Recovery
+* Rate limiting
+* Circuit breakers
+* Health checks
+* Deployment documentation
+
+---
+
+# 34. IMPORTANT ARCHITECTURAL RULE
+
+Do not implement all phases in one giant coding operation.
+
+After each phase:
+
+1. Run tests
+2. Inspect architecture
+3. Check public APIs
+4. Update documentation
+5. Check backward compatibility
+6. Run lint/typecheck
+7. Review security implications
+8. Create an example
+9. Commit the work logically
+
+Only continue to the next phase after the previous phase is stable.
+
+---
+
+# 35. QUALITY GATES
+
+Every phase must pass:
+
+```text
+TypeScript compile
+        +
+Lint
+        +
+Unit tests
+        +
+Integration tests where applicable
+        +
+Security review
+        +
+Documentation
+        +
+Example
+```
+
+No phase is considered complete if tests are failing.
+
+Do not hide failures.
+
+---
+
+# 36. PERFORMANCE REQUIREMENTS
+
+The framework should minimize unnecessary:
+
+* LLM calls
+* Tokens
+* Context size
+* Tool calls
+* Retrieval operations
+* Reflection cycles
+
+Every intelligent operation should have configurable limits.
+
+Support:
+
+```text
+maxSteps
+maxTokens
+maxToolCalls
+maxRetries
+maxReflectionAttempts
+timeout
+budget
+```
+
+---
+
+# 37. COST CONTROL
+
+Treat LLM cost as a first-class production concern.
+
+Track:
+
+```text
+Provider
+Model
+Input tokens
+Output tokens
+Cached tokens
+Estimated cost
+Run ID
+Agent
+User
+Tenant
+```
+
+Support budgets:
+
+```typescript
+budget: {
+  maxCost: 0.50,
+  maxTokens: 20000
+}
+```
+
+The framework should be able to stop execution when a budget is exceeded.
+
+---
+
+# 38. DATA GOVERNANCE
+
+Enterprise agents may process sensitive information.
+
+Design for:
+
+* Data classification
+* Retention policies
+* Redaction
+* Encryption
+* Access control
+* Auditability
+* Tenant isolation
+* Data deletion
+* Memory deletion
+* Source provenance
+
+Do not assume all model providers can process all data.
+
+Provider capabilities should be configurable.
+
+---
+
+# 39. ANTI-PATTERNS TO AVOID
+
+Do NOT create:
+
+### Giant Agent
+
+One agent with 100 tools and unlimited permissions.
+
+### Giant Prompt
+
+Putting the entire application architecture into one system prompt.
+
+### Infinite Agent Loop
+
+Agent repeatedly calling itself without hard limits.
+
+### Blind Memory
+
+Saving every conversation permanently.
+
+### Blind RAG
+
+Retrieving dozens of irrelevant documents.
+
+### Fake Reflection
+
+Having the same model say "I am correct" without evidence.
+
+### Uncontrolled Multi-Agent
+
+Agents spawning agents without limits.
+
+### LLM Authorization
+
+Letting the LLM decide whether it has permission.
+
+### Hidden State
+
+Agent state existing only inside prompts.
+
+### Vendor Lock-in
+
+Putting provider-specific APIs everywhere.
+
+---
+
+# 40. FINAL ARCHITECTURAL GOAL
+
+The resulting framework should make this possible:
+
+```text
+Developer
+    │
+    ↓
+defineAgent()
+    │
+    ↓
+Framework
+    │
+    ├── LLM
+    ├── Tools
+    ├── Context
+    ├── Knowledge
+    ├── Memory
+    ├── Planner
+    ├── Reflection
+    ├── Workers
+    ├── Security
+    ├── Guardrails
+    ├── Observability
+    └── Evaluation
+    │
+    ↓
+Production Agent
+```
+
+The developer should focus primarily on:
+
+```text
+What should the Agent accomplish?
+What tools does it need?
+What data can it access?
+What policies apply?
+What output is expected?
+```
+
+The framework should handle the infrastructure.
+
+---
+
+# 41. YOUR WORKING METHOD
+
+You are not merely a code generator.
+
+Act as:
+
+* Architect
+* Security engineer
+* TypeScript expert
+* AI infrastructure engineer
+* Testing engineer
+* DevOps engineer
+* Technical writer
+
+When you encounter an architectural decision, explain the alternatives briefly and choose one based on:
+
+1. Reliability
+2. Maintainability
+3. Security
+4. Developer experience
+5. Performance
+6. Cost
+7. Vendor independence
+
+Do not choose technology simply because it is popular.
+
+---
+
+# 42. START NOW
+
+Start with **Phase 0 only**.
+
+Do NOT immediately implement the entire framework.
+
+First:
+
+1. Inspect the existing repository.
+2. Determine whether it is empty or contains an existing project.
+3. Analyze the current environment.
+4. Produce the architecture.
+5. Produce the proposed package structure.
+6. Produce the public developer API.
+7. Produce the threat model.
+8. Produce the data model.
+9. Produce the execution lifecycle.
+10. Produce the major ADRs.
+11. Produce the implementation roadmap.
+12. Identify architectural risks and unresolved decisions.
+
+Then STOP and present the Phase 0 results.
+
+Do not begin Phase 1 until the architecture is internally consistent.
+
+After approval, implement one phase at a time.
+
+The final result must be a reusable **Enterprise AI Agent Framework for TypeScript/Node.js**, not a single application-specific agent.

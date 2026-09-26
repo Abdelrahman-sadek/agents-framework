@@ -1,0 +1,31 @@
+{
+  "name": "@agent-framework/cli",
+  "version": "0.1.0",
+  "description": "Developer CLI: init, dev, test, evaluate, inspect, trace",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "agent": "./bin/agent.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run",
+    "dev": "tsc -b --watch"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "@agent-framework/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "typescript-eslint": "^8.0.0",
+    "globals": "^16.0.0"
+  }
+}

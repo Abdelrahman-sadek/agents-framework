@@ -1,0 +1,42 @@
+lockfileVersion: 9.0
+specifiers:
+  '@agent-framework/core': 0.1.0
+  '@types/node': 20
+  typescript: 5.7
+  vitest: 2.1
+  commander: 12
+  zod: 3.23
+  openai: 4.67
+  better-sqlite3: 11.6
+  dotenv: 16.4
+  '@opentelemetry/api': 1.9
+  '@opentelemetry/sdk-trace-node': 1.25
+  '@opentelemetry/sdk-metrics': 1.25
+  '@opentelemetry/instrumentation-http': 0.52
+  '@opentelemetry/semantic-conventions': 1.25
+  tsx: 4.0
+  async: 3.2
+  uuid: 10.0
+packages:
+  '@agent-framework/core':
+    path: packages/core
+  '@agent-framework/llm':
+    path: packages/llm
+  '@agent-framework/tools':
+    path: packages/tools
+  '@agent-framework/context':
+    path: packages/context
+  '@agent-framework/knowledge':
+    path: packages/knowledge
+  '@agent-framework/memory':
+    path: packages/memory
+  '@agent-framework/orchestration':
+    path: packages/orchestration
+  '@agent-framework/security':
+    path: packages/security
+  '@agent-framework/observability':
+    path: packages/observability
+  '@agent-framework/evaluation':
+    path: packages/evaluation
+  '@agent-framework/cli':
+    path: packages/cli
