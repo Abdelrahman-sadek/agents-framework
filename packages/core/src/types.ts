@@ -1,260 +1,130 @@
-export type Duration = number | { milliseconds: number } | { seconds: number };
+import type { SerializedError } from "./errors.js";
+import type { Principal } from "./identity.js";
+import type { LLMMessage, LLMToolCall } from "./llm.js";
+import type { ApprovalRequest } from "./tool.js";
 
+/**
+ * Hard limits for a run. Every intelligent operation is bounded; the runtime,
+ * not the model, enforces these.
+ */
 export interface RunLimits {
+  /** Maximum model calls in one run. */
   maxSteps?: number;
+  /** Maximum tool calls requested in one run (including denied ones). */
   maxToolCalls?: number;
+  /** Maximum input + output tokens across the run. */
   maxTokens?: number;
+  /** Maximum estimated cost in USD across the run. */
   maxCost?: number;
-  timeout?: Duration;
-  maxRetries?: number;
-  maxReflectionAttempts?: number;
+  /** Wall-clock timeout for one `run()` / `resume()` invocation. */
+  timeoutMs?: number;
+  /** Retries for retryable model errors, per model call. */
+  maxLLMRetries?: number;
 }
 
-export interface RunConfig<TInput = unknown> {
-  input: TInput;
-  metadata?: Record<string, unknown>;
-  limits?: RunLimits;
-  signal?: AbortSignal;
+export interface ResolvedRunLimits {
+  maxSteps: number;
+  maxToolCalls: number;
+  maxTokens: number | undefined;
+  maxCost: number | undefined;
+  timeoutMs: number;
+  maxLLMRetries: number;
 }
+
+export const DEFAULT_RUN_LIMITS: ResolvedRunLimits = Object.freeze({
+  maxSteps: 10,
+  maxToolCalls: 25,
+  maxTokens: undefined,
+  maxCost: undefined,
+  timeoutMs: 120_000,
+  maxLLMRetries: 2,
+});
 
 export type AgentStatus =
   | "CREATED"
-  | "INITIALIZING"
-  | "QUEUED"
   | "RUNNING"
   | "WAITING_FOR_APPROVAL"
-  | "REFLECTING"
   | "COMPLETED"
   | "FAILED"
   | "CANCELLED"
   | "TIMED_OUT"
-  | "APPROVAL_REJECTED"
   | "APPROVAL_EXPIRED";
 
-export interface AgentState {
-  runId: string;
-  agentId: string;
-  status: AgentStatus;
-  input: unknown;
-  context: ContextState;
-  plan?: Plan;
-  steps: ExecutionStep[];
-  metadata: Record<string, unknown>;
-  startedAt: string;
-  updatedAt: string;
-  error?: FrameworkError;
-  budgetUsed?: BudgetUsage;
-}
+export const TERMINAL_STATUSES: ReadonlySet<AgentStatus> = new Set([
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+  "TIMED_OUT",
+  "APPROVAL_EXPIRED",
+]);
 
-export interface ContextState {
-  maxTokens: number;
-  includeMemory: boolean;
-  includeToolHistory: boolean;
-  summarizeHistoryAfter: number;
-}
-
-export interface Plan {
-  goal: string;
-  steps: PlanStep[];
-}
-
-export interface PlanStep {
-  id: string;
-  description: string;
-  dependencies?: string[];
-  status: StepStatus;
-  worker?: string;
-  inputs?: unknown;
-  outputs?: unknown;
-  timeout?: Duration;
-  retryPolicy?: RetryPolicy;
-}
-
-export type StepStatus =
-  | "PENDING"
-  | "SCHEDULED"
-  | "RUNNING"
-  | "COMPLETED"
-  | "FAILED"
-  | "CANCELLED";
+export type StepKind = "llm_call" | "tool_call";
+export type StepStatus = "RUNNING" | "COMPLETED" | "FAILED" | "WAITING_FOR_APPROVAL" | "REJECTED";
 
 export interface ExecutionStep {
   stepId: string;
-  description: string;
+  index: number;
+  kind: StepKind;
   status: StepStatus;
-  worker?: string;
-  inputs?: unknown;
-  outputs?: unknown;
-  startedAt?: string;
+  startedAt: string;
   completedAt?: string;
-  error?: FrameworkError;
-  retryCount?: number;
+  llmCallId?: string;
+  toolCallId?: string;
+  toolName?: string;
+  attempts?: number;
+  error?: SerializedError;
 }
 
-export interface RetryPolicy {
-  maxAttempts: number;
-  backoff?: "fixed" | "exponential";
-  initialDelay?: Duration;
-}
-
-export interface BudgetUsage {
-  tokens: number;
-  estimatedCost: number;
-  steps: number;
+export interface UsageTotals {
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  llmCalls: number;
   toolCalls: number;
 }
 
-export interface ToolPermissions {
-  allowed?: string[];
-  denied?: string[];
-  dataScope?: string[];
-}
-
-export interface ToolAuthorizationContext {
-  runId: string;
-  agentId: string;
-  userId?: string;
-  tenantId?: string;
-  organizationId?: string;
-  toolName: string;
-  toolVersion?: string;
-  input: unknown;
-  requestedAction?: string;
-}
-
-export interface ToolAuthorizationResult {
-  allowed: boolean;
-  reason?: string;
-  requiredApproval?: boolean;
-  approvalId?: string;
-  permissionScope?: string[];
-}
-
-export interface ToolRateLimitConfig {
-  maxPerPeriod?: number;
-  periodMs?: number;
-  key?: string;
-}
-
-export interface ToolIdempotencyConfig {
-  enabled?: boolean;
-  key?: string | boolean;
-  ttlMs?: number;
-}
-
-export interface ToolObservation {
-  toolCallId: string;
-  runId: string;
-  agentId: string;
-  toolName: string;
-  toolVersion?: string;
-  input?: unknown;
-  output?: unknown;
-  status: string;
-  startedAt?: string;
-  completedAt?: string;
-  error?: { code: string; message: string };
-  authorizedBy?: string;
-  permissionScope?: string[];
-  retryCount?: number;
-  durationMs?: number;
-}
-
-export interface ToolAuditEntry {
-  toolCallId: string;
-  runId: string;
-  agentId: string;
-  userId?: string;
-  tenantId?: string;
-  toolName: string;
-  toolVersion?: string;
-  input?: unknown;
-  output?: unknown;
-  status: string;
-  authorized: boolean;
-  reason?: string;
-  requestedAt?: string;
-  completedAt?: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface ModelCapabilities {
-  providerId: string;
-  modelId: string;
-  local: boolean;
-  contextWindowTokens?: number;
-  structuredOutput?: boolean;
-  toolCalling?: boolean;
-  streaming?: boolean;
-  vision?: boolean;
-  embedding?: boolean;
-  costPerMillionInputTokens?: number;
-  costPerMillionOutputTokens?: number;
-  latencyMs?: number;
-}
-
-export interface ApprovalConfig {
-  required?: boolean;
-  expiration?: Duration;
-  escalation?: string[];
-}
-
-export interface ToolEventPayload {
-  toolCallId: string;
-  toolName: string;
-  input: unknown;
-  output?: unknown;
-  status: string;
-  startedAt?: string;
-  completedAt?: string;
-  error?: FrameworkError;
-  retryCount?: number;
-}
-
-export interface LLMEventPayload {
+export interface PendingApproval {
+  approval: ApprovalRequest;
+  toolCall: LLMToolCall;
+  stepId: string;
   llmCallId: string;
-  provider: string;
-  model: string;
-  status: string;
-  tokenUsage?: TokenUsage;
-  estimatedCost?: number;
-  error?: FrameworkError;
-  startedAt?: string;
-  completedAt?: string;
 }
 
-export interface TokenUsage {
-  inputTokens: number;
-  outputTokens: number;
-  cachedTokens?: number;
-}
-
-export interface EventEnvelope {
-  eventId: string;
+/**
+ * Complete, serializable run state. Everything needed to inspect or resume a
+ * run lives here — never only inside a prompt.
+ */
+export interface AgentState {
   runId: string;
   agentId: string;
-  occurredAt: string;
-  type: string;
-  actor?: string;
-  correlationId?: string;
-  payload: unknown;
-  metadata?: Record<string, unknown>;
+  agentVersion?: string;
+  status: AgentStatus;
+  input: unknown;
+  user?: Principal;
+  messages: LLMMessage[];
+  steps: ExecutionStep[];
+  usage: UsageTotals;
+  pendingApprovals: PendingApproval[];
+  limits: ResolvedRunLimits;
+  metadata: Record<string, unknown>;
+  output?: unknown;
+  error?: SerializedError;
+  /** Last event sequence number, so resumed runs continue the event stream. */
+  eventSequence: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface BudgetExceededOptions {
-  runId: string;
-  limitType: "tokens" | "cost" | "steps" | "toolCalls";
-  limit: number;
-  current: number;
-}
-
-export interface ApprovalEventPayload {
-  approvalId: string;
-  runId: string;
-  stepId?: string;
-  toolCallId?: string;
-  actionDescription: string;
-  status: string;
-  requestedAt: string;
-  expiresAt?: string;
+export function emptyUsage(): UsageTotals {
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedInputTokens: 0,
+    totalTokens: 0,
+    estimatedCostUsd: 0,
+    llmCalls: 0,
+    toolCalls: 0,
+  };
 }

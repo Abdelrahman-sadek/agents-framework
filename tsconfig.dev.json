@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@agent-framework/core": ["./packages/core/src/index.ts"],
+      "@agent-framework/core/testing": ["./packages/core/src/testing.ts"],
+      "@agent-framework/llm": ["./packages/llm/src/index.ts"],
+      "@agent-framework/tools": ["./packages/tools/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts", "examples/**/*.ts", "vitest.config.ts"]
+}
