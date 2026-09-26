@@ -1,96 +1,74 @@
-import { DefaultAgentRuntime, type Agent, type AgentRunResult, type LLMProvider, type LLMResponse } from "@agent-framework/core";
-import { defineTool, ToolRuntime, type ToolResult } from "@agent-framework/tools";
+/**
+ * Example 1 — Simple agent: User → Agent → Tool → Answer.
+ *
+ * Runs offline with a scripted model so it is deterministic. Swap the provider
+ * for a real adapter (OpenAI, Anthropic, a local model…) without touching the agent.
+ *
+ *   pnpm example:hello
+ */
+import { InMemoryEventSink, createRuntime, defineAgent } from "@agent-framework/core";
+import { createScriptedProvider } from "@agent-framework/core/testing";
+import { models } from "@agent-framework/llm";
+import { InMemoryAuditLog, ToolRuntime, defineTool } from "@agent-framework/tools";
 import { z } from "zod";
 
-function createMockLLM(modelId: string): LLMProvider {
-  return {
-    capabilities: async () => ({ streaming: false, toolCalling: true, structuredOutput: true }),
-    generate: async (_request): Promise<LLMResponse> => {
+// 1. A tool: typed input/output, validated at runtime, permission-gated.
+const weatherTool = defineTool({
+  name: "get_weather",
+  description: "Get the current weather for a city",
+  input: z.object({ city: z.string().describe("City name, e.g. Cairo") }),
+  output: z.object({ city: z.string(), temperatureC: z.number(), condition: z.string() }),
+  permissions: ["weather.read"],
+  timeoutMs: 5_000,
+  execute: async ({ city }) => ({ city, temperatureC: 31, condition: "sunny" }),
+});
+
+// 2. A model provider. Here: a scripted stand-in that asks for the tool, then answers.
+const provider = createScriptedProvider(
+  [
+    { toolCalls: [{ id: "call_1", name: "get_weather", arguments: { city: "Cairo" } }] },
+    (request) => {
+      const toolResult = request.messages.at(-1)?.content ?? "";
+      const { temperatureC, condition } = JSON.parse(toolResult) as { temperatureC: number; condition: string };
       return {
-        id: crypto.randomUUID(),
-        modelId,
-        content: "Here is the answer.",
+        id: "resp_2",
+        modelId: request.modelId,
+        content: `It is ${temperatureC}°C and ${condition} in Cairo.`,
         toolCalls: [],
         finishReason: "stop",
-        usage: { inputTokens: 8, outputTokens: 6, estimatedCost: 0 },
+        usage: { inputTokens: 42, outputTokens: 12 },
       };
     },
-  };
-}
+  ],
+  { id: "openai" },
+);
 
-const searchTool = defineTool({
-  name: "search",
-  description: "Search the knowledge source",
-  inputSchema: z.object({ query: z.string() }),
-  outputSchema: z.object({ results: z.array(z.string()) }),
-  execute: async (input, context) => {
-    console.log("Executing search tool for:", input.query, "runId:", context.runId);
-    return { results: [`result-for-${input.query}`] };
-  },
-  permissions: { allowed: ["search"], dataScope: ["read"] },
+// 3. An explicit runtime: providers, the tool runtime, and event sinks. No globals.
+const events = new InMemoryEventSink();
+const audit = new InMemoryAuditLog();
+const runtime = createRuntime({ providers: [provider], tools: new ToolRuntime({ audit }), events });
+
+// 4. The agent.
+const agent = defineAgent({
+  name: "weather-assistant",
+  model: models.openai("gpt-4.1-mini"),
+  instructions: "You answer weather questions. Use tools for facts.",
+  tools: [weatherTool],
+  permissions: ["weather.read"],
+  limits: { maxSteps: 4, maxToolCalls: 2 },
+  runtime,
 });
 
-function makeAgent(name: string, modelId: string): Agent {
-  const config = {
-    name,
-    model: { providerId: "mock", modelId },
-    system: "You are a helpful assistant with access to a search tool.",
-    tools: [searchTool],
-  };
-
-  const runtime = createDefaultRuntime(modelId);
-
-  const agent: Agent = {
-    name: config.name,
-    agentId: `agent-${name}`,
-    config,
-    run: async (runConfig) => runtime.execute(agent, runConfig),
-    cancel: async () => {},
-  };
-
-  return agent;
-}
-
-function createDefaultRuntime(modelId: string): DefaultAgentRuntime {
-  const provider = createMockLLM(modelId);
-  const toolRuntime = new ToolRuntime();
-  const emitted: { event: any; agentId: string }[] = [];
-  const emitter = {
-    emit: (event: any, agentId: string) => {
-      emitted.push({ event, agentId });
-      console.log(JSON.stringify({ event: event.type, agentId, ts: new Date().toISOString() }, null, 2));
-    },
-  };
-  return new DefaultAgentRuntime(
-    provider,
-    emitter,
-    { generate: () => `run-${crypto.randomUUID().slice(0, 8)}` },
-    { nowISO: () => new Date().toISOString() },
-  );
-}
-
-const agent = makeAgent("hello-agent", "mock-hello-model");
-const result: AgentRunResult = await agent.run({ input: "Search for hello", metadata: {} });
-
-console.log("\n--- Result ---");
-console.log("runId:", result.runId);
-console.log("status:", result.status);
-console.log("output:", result.output);
-console.log("events:", result.events.map((e) => e.type));
-
-// Also exercise the tool runtime directly to demonstrate deterministic tool execution.
-const toolRuntime = new ToolRuntime();
-const toolResult: ToolResult<{ results: string[] }> = await toolRuntime.execute({
-  tool: searchTool,
-  input: { query: "hello" },
-  callId: crypto.randomUUID(),
-  runId: result.runId,
-  agentId: agent.agentId,
+// 5. Run it on behalf of a user.
+const result = await agent.run({
+  input: "What's the weather in Cairo?",
+  user: { userId: "user-42", tenantId: "acme", permissions: ["weather.read"] },
 });
 
-console.log("\n--- Direct tool result ---");
-console.log("ok:", toolResult.ok);
-console.log("output:", toolResult.output);
-if (toolResult.error) {
-  console.error("error:", toolResult.error);
-}
+console.log(`status: ${result.status}`);
+console.log(`output: ${result.output}`);
+console.log(`usage:  ${result.usage.totalTokens} tokens, ${result.usage.toolCalls} tool call(s)`);
+console.log("\nevents:");
+for (const event of events.events) console.log(`  ${String(event.sequence).padStart(2)} ${event.type}`);
+console.log("\naudit:");
+for (const entry of audit.entries) console.log(`  ${entry.toolName} → ${entry.outcome} (${entry.authorization?.reason})`);
