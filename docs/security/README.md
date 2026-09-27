@@ -165,7 +165,7 @@ Controls:
 - validate and constrain integration points
 - maintain adapter boundaries so provider-specific weaknesses do not spread into the core
 
-## Implemented controls (Phase 2)
+## Implemented controls
 
 | Control | Where | Test coverage |
 | --- | --- | --- |
@@ -183,7 +183,16 @@ Controls:
 | Sensitive inputs redacted from audit; events carry no arguments/outputs | `sensitive`, event design | `security.test.ts` |
 | Audit record for every tool invocation, including denials | `AuditSink` | `tool-runtime.test.ts` |
 
-Not yet implemented: prompt-injection detection, input/output guardrails, SSRF-safe HTTP adapter, tenant-scoped storage adapters, secret management integration and OpenTelemetry redaction (Phases 11–12).
+| Input, tool-result and output guardrails (PII, prompt injection, secrets, content, length), fail closed | core runtime + `@agent-framework/security` | `runtime-extensions.test.ts`, `security` package tests |
+| RBAC with nested roles, ABAC rules, tenant isolation on arguments, data classification vs. clearance | `@agent-framework/security` policies | `security.test.ts` |
+| SSRF-safe egress: allow-list, https only, private/metadata address blocking after DNS, per-hop redirect checks, size/time caps | `createEgressPolicy`, `safeFetch`, `defineHttpTool` | `security.test.ts` |
+| Secrets resolved inside tool execution only | `SecretProvider`, `envSecrets` | `security.test.ts` |
+| Tenant-scoped knowledge and memory, memory write policy and ownership | `@agent-framework/knowledge`, `@agent-framework/memory` | package tests |
+| Bounded delegation depth; delegates act for the same user | `agentAsTool` | `orchestration.test.ts` |
+| Telemetry redaction; spans carry no content | `redactingSink`, `openTelemetrySink` | `observability.test.ts` |
+| Production config refuses in-memory audit/state and missing budgets | `createFramework` | `production.test.ts` |
+
+Guides: [Security](../security.md), [Guardrails](../guardrails.md).
 
 ## Controls summary
 

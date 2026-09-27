@@ -14,7 +14,12 @@
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "rm -rf packages/*/dist",
     "example:hello": "tsx --tsconfig tsconfig.dev.json examples/hello-agent/index.ts",
-    "example:approval": "tsx --tsconfig tsconfig.dev.json examples/approval-agent/index.ts"
+    "example:approval": "tsx --tsconfig tsconfig.dev.json examples/approval-agent/index.ts",
+    "example:rag": "tsx --tsconfig tsconfig.dev.json examples/rag-agent/index.ts",
+    "example:research": "tsx --tsconfig tsconfig.dev.json examples/research-agent/index.ts",
+    "example:orchestrator": "tsx --tsconfig tsconfig.dev.json examples/orchestrator/index.ts",
+    "example:enterprise": "tsx --tsconfig tsconfig.dev.json examples/enterprise-agent/index.ts",
+    "examples": "pnpm -s example:hello && pnpm -s example:approval && pnpm -s example:rag && pnpm -s example:research && pnpm -s example:orchestrator && pnpm -s example:enterprise"
   },
   "engines": {
     "node": ">=20.3.0"

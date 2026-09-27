@@ -1,7 +1,8 @@
 /**
- * @agent-framework/cli — reserved package.
- *
- * Developer CLI (planned): create, dev, test, evaluate, inspect, trace.
- * See docs/roadmap.md for the phase that implements it.
+ * @agent-framework/cli — the `agent` command and declarative manifests.
  */
-export {};
+export { runCli } from "./cli.js";
+export type { CliIO } from "./cli.js";
+export { AgentManifestSchema, checkManifest, defineAgentFromManifest, parseManifest } from "./manifest.js";
+export type { AgentManifest, ManifestRegistry } from "./manifest.js";
+export { scaffold } from "./templates.js";

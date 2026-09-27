@@ -96,3 +96,59 @@ function delay(ms: number, signal: AbortSignal | undefined): Promise<void> {
     );
   });
 }
+
+export type RuleReply = { text: string; usage?: Partial<LLMTokenUsage> } | { toolCalls: (Omit<LLMToolCall, "arguments"> & { arguments: unknown })[]; text?: string };
+
+/**
+ * A deterministic stand-in model that answers by rules over the request
+ * (e.g. "if a tool result is present, summarize it"). The first rule that
+ * returns a reply wins. Useful for offline examples and scenario tests.
+ */
+export function createRuleProvider(
+  rules: readonly ((request: LLMRequest, helpers: RuleHelpers) => RuleReply | undefined)[],
+  options: ScriptedProviderOptions = {},
+): ScriptedProvider {
+  let counter = 0;
+  return createScriptedProvider(
+    Array.from({ length: 10_000 }, () => (request: LLMRequest): LLMResponse => {
+      const helpers = ruleHelpers(request);
+      const reply = rules.reduce<RuleReply | undefined>((found, rule) => found ?? rule(request, helpers), undefined) ?? { text: "" };
+      counter += 1;
+      const usage: LLMTokenUsage = { inputTokens: Math.ceil(JSON.stringify(request.messages).length / 4), outputTokens: 20 };
+      if ("toolCalls" in reply) {
+        return {
+          id: `rule-${counter}`,
+          modelId: request.modelId,
+          content: reply.text ?? "",
+          toolCalls: reply.toolCalls.map((c) => ({ id: c.id, name: c.name, arguments: typeof c.arguments === "string" ? c.arguments : JSON.stringify(c.arguments) })),
+          finishReason: "tool_calls",
+          usage,
+        };
+      }
+      return { id: `rule-${counter}`, modelId: request.modelId, content: reply.text, toolCalls: [], finishReason: "stop", usage: { ...usage, ...reply.usage } };
+    }),
+    options,
+  );
+}
+
+export interface RuleHelpers {
+  /** Text of the last user message. */
+  lastUser: string;
+  /** Tool results already in the conversation, by tool name (latest wins). */
+  toolResults: Record<string, string>;
+  /** The reference-material block, if context items were provided. */
+  context: string;
+  hasTool(name: string): boolean;
+}
+
+function ruleHelpers(request: LLMRequest): RuleHelpers {
+  const toolResults: Record<string, string> = {};
+  let lastUser = "";
+  let context = "";
+  for (const m of request.messages) {
+    if (m.role === "tool") toolResults[m.toolName] = m.content;
+    if (m.role === "user") lastUser = m.content;
+    if (m.role === "system" && m.content.includes("<context>")) context = m.content;
+  }
+  return { toolResults, lastUser, context, hasTool: (name) => (request.tools ?? []).some((t) => t.name === name) };
+}

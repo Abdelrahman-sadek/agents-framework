@@ -1,7 +1,7 @@
 /**
- * @agent-framework/context — reserved package.
+ * @agent-framework/context — the context engine.
  *
- * Context engine (planned): selection, ranking, compression, summarization, token budgets.
- * See docs/roadmap.md for the phase that implements it.
+ * Available information → relevance → priority → token budget → final model context.
  */
-export {};
+export { approximateTokenCounter, createContextEngine, llmSummarizer } from "./engine.js";
+export type { ContextEngineOptions, Summarizer, TokenCounter } from "./engine.js";

@@ -1,6 +1,6 @@
 # Open decisions and risks
 
-This document tracks unresolved decisions and architectural risks visible after Phase 2.
+This document tracks unresolved decisions and architectural risks after Phase 14.
 
 ## Open decisions
 
@@ -62,7 +62,7 @@ Status: open; revisit with the durable approval store (Phase 14) or security pha
 
 Idempotency, rate-limit and audit stores ship as in-memory implementations. Multi-instance deployments need shared adapters (PostgreSQL/Redis).
 
-Status: interfaces stable; adapters planned for Phase 14.
+Status: PostgreSQL audit and idempotency stores exist; Redis adapters and a pgvector store are still planned.
 
 ## Risks
 
@@ -128,7 +128,9 @@ Mitigation: keep core contracts clean and treat adapter-specific behavior as ada
 
 ## Recommendations for next steps
 
-- Start Phase 3 (structured output correction loop) on top of the existing output validation.
-- Build the first real provider adapter (an OpenAI-compatible adapter covers many cloud and local servers).
-- Finalize package identity after availability checks, then publish 0.x.
-- Keep security review in every phase; add guardrail tests alongside Phase 11 work.
+All 14 phases are implemented; remaining work is tracked in the [roadmap](../roadmap.md#next). Priorities:
+
+- Streaming through the run loop and adapters.
+- Shared-store adapters (pgvector, Redis) for multi-instance deployments.
+- MCP and sandbox tool adapters.
+- Finalize package identity, then publish 0.x.

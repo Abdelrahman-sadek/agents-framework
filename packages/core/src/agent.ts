@@ -3,7 +3,10 @@ import type { AgentEvent } from "./events.js";
 import type { Principal } from "./identity.js";
 import { validateLimits } from "./limits.js";
 import type { LLMModelSelector, LLMRequestSettings } from "./llm.js";
-import type { Schema } from "./schema.js";
+import type { JsonSchema, Schema } from "./schema.js";
+import type { ContextProvider } from "./context.js";
+import type { Guardrail } from "./guardrail.js";
+import type { ReflectionConfig } from "./reflection.js";
 import type { AgentTool, ApprovalDecision, ApprovalRequest } from "./tool.js";
 import type { AgentState, AgentStatus, ExecutionStep, RunLimits, UsageTotals } from "./types.js";
 
@@ -17,6 +20,14 @@ export interface AgentConfig<TOutput = string> {
   tools?: readonly AgentTool[];
   /** Schema for the final output. Without it, the output is the model's text. */
   output?: Schema<TOutput>;
+  /** JSON Schema sent to models that support structured output. Derived from `output.toJSONSchema()` when available. */
+  outputJsonSchema?: JsonSchema;
+  /** Knowledge, memory or application context contributed once per run. */
+  context?: readonly ContextProvider[];
+  /** Input, tool-result and output guardrails. */
+  guardrails?: readonly Guardrail[];
+  /** Generate → verify → correct. Opt-in; bounded by `limits.maxReflectionAttempts`. */
+  reflection?: ReflectionConfig;
   /** Permissions granted to the agent identity. Tools need them on both agent and user. */
   permissions?: readonly string[];
   limits?: RunLimits;
@@ -45,6 +56,11 @@ export interface ResumeOptions {
   timeoutMs?: number;
 }
 
+export interface RecoverOptions {
+  runId: string;
+  signal?: AbortSignal;
+}
+
 export interface AgentRunResult<TOutput = string> {
   runId: string;
   agentId: string;
@@ -63,6 +79,8 @@ export interface AgentRunResult<TOutput = string> {
 export interface AgentRuntime {
   run<TOutput>(agent: Agent<TOutput>, options: RunOptions): Promise<AgentRunResult<TOutput>>;
   resume<TOutput>(agent: Agent<TOutput>, options: ResumeOptions): Promise<AgentRunResult<TOutput>>;
+  /** Continue a run interrupted by a crash (state still RUNNING). */
+  recover<TOutput>(agent: Agent<TOutput>, options: RecoverOptions): Promise<AgentRunResult<TOutput>>;
   getState(runId: string): Promise<AgentState | undefined>;
 }
 
@@ -73,6 +91,7 @@ export interface Agent<TOutput = string> {
   readonly config: Readonly<AgentConfig<TOutput>>;
   run(options: RunOptions): Promise<AgentRunResult<TOutput>>;
   resume(options: ResumeOptions): Promise<AgentRunResult<TOutput>>;
+  recover(options: RecoverOptions): Promise<AgentRunResult<TOutput>>;
   /** Returns a copy of this agent bound to another runtime. */
   withRuntime(runtime: AgentRuntime): Agent<TOutput>;
 }
@@ -119,6 +138,7 @@ export function defineAgent<TOutput = string>(config: AgentConfig<TOutput>): Age
     config: frozen,
     run: (options: RunOptions) => requireRuntime().run(agent, options),
     resume: (options: ResumeOptions) => requireRuntime().resume(agent, options),
+    recover: (options: RecoverOptions) => requireRuntime().recover(agent, options),
     withRuntime: (runtime: AgentRuntime) => defineAgent<TOutput>({ ...config, runtime }),
   });
   return agent;

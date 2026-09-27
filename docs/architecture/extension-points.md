@@ -2,18 +2,24 @@
 
 The core stays small by defining interfaces for everything that varies. This page lists them: what exists now, and what later phases will plug in.
 
-| Port | Status | Implementations today | Planned |
-| --- | --- | --- | --- |
-| `LLMProvider` | ✅ | `createScriptedProvider` (tests) | OpenAI, Anthropic, Gemini, OpenRouter, OpenAI-compatible local servers |
-| `ToolInvoker` | ✅ | `ToolRuntime` | — |
-| `ToolPolicy` | ✅ | `permissionPolicy`, `allOf`, `policy`, `decisionPolicy` | RBAC/ABAC policy engine (Phase 11) |
-| `AuditSink`, `IdempotencyStore`, `RateLimiter` | ✅ | in-memory | PostgreSQL, Redis |
-| `EventSink` | ✅ | `InMemoryEventSink` | OpenTelemetry bridge, log sinks (Phase 12) |
-| `RunStateStore` | ✅ | `InMemoryRunStateStore` | SQLite, PostgreSQL, Redis; Temporal runner (Phase 14) |
-| `ContextManager` | 🧩 | `passthroughContext` | Context engine (Phase 4) |
-| `DecisionEngine` / `DecisionProvider` | 🧩 | `createDecisionEngine`, `ruleDecisionProvider` | local classifiers, external engines, LLM judges |
-| `Schema` | ✅ | any `safeParse` validator (Zod) | — |
-| `Clock`, `IdGenerator` | ✅ | system, random, sequential | — |
+| Port | Implementations |
+| --- | --- |
+| `LLMProvider` | `anthropicProvider` (official SDK), `openAICompatibleProvider`, wrappers `withCircuitBreaker` / `withRateLimit` / `withFallback`, test providers |
+| `ToolInvoker` | `ToolRuntime` |
+| `ToolPolicy` | `permissionPolicy`, `allOf`, `policy`, `decisionPolicy`, `rbacPolicy`, `abacPolicy`, `tenantIsolationPolicy`, `dataClassificationPolicy` |
+| `AuditSink`, `IdempotencyStore`, `RateLimiter` | in-memory; `PostgresAuditSink`, `PostgresIdempotencyStore` |
+| `EventSink` | `InMemoryEventSink`, `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `CostTracker` |
+| `RunStateStore` | in-memory, `SqliteRunStateStore`, `PostgresRunStateStore` |
+| `JobQueue` | in-memory, `SqliteJobQueue`, `PostgresJobQueue` |
+| `ContextManager` / `ContextProvider` | `passthroughContext`, `createContextEngine`; knowledge and memory providers |
+| `EmbeddingProvider`, `VectorStore`, `Reranker` | `hashingEmbedder`, `InMemoryVectorStore`, `lexicalReranker` |
+| `MemoryStore` | `InMemoryMemoryStore` |
+| `Guardrail` | PII, prompt injection, secret leak, content policy, max length |
+| `Verifier` | `ruleVerifier`, `citationVerifier`, `llmCritic`, `agentVerifier` |
+| `DecisionEngine` / `DecisionProvider` | `createDecisionEngine`, `ruleDecisionProvider` |
+| `SecretProvider` | `envSecrets` |
+| `Schema` | any `safeParse` validator (Zod) |
+| `Clock`, `IdGenerator` | system, random, sequential |
 
 ## Decision engine
 
@@ -77,4 +83,4 @@ The framework owns its abstractions. External projects (local inference, agent r
 
 1. maturity, 2. maintenance activity, 3. license, 4. security posture, 5. architecture fit, 6. performance, 7. community, 8. lock-in risk, 9. API stability, 10. whether it solves a real framework problem.
 
-Nothing is added because it is trending. Phase 2 added one runtime dependency, **zod** (tools only), and the core has none.
+Nothing is added because it is trending. Runtime dependencies today: **zod** (tools and packages that define schemas), **@opentelemetry/api** (observability, API only), **@anthropic-ai/sdk** (only in `provider-anthropic`). The core has none.

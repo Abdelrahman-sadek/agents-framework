@@ -1,10 +1,9 @@
 {
   "name": "@agent-framework/orchestration",
   "version": "0.1.0",
-  "description": "Planning and orchestration (planned): plans, workers, dependencies, re-planning",
+  "description": "Planning, orchestration and multi-agent patterns: plans as validated DAGs, workers, parallel execution, retries, re-planning, delegation",
   "license": "Apache-2.0",
   "type": "module",
-  "private": true,
   "sideEffects": false,
   "exports": {
     ".": {
@@ -21,5 +20,10 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run --root ../.. --project orchestration"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*",
+    "@agent-framework/tools": "workspace:*",
+    "zod": "^4.1.0"
   }
 }

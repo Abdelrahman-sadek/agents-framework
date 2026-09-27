@@ -1,5 +1,7 @@
 # Architecture
 
+> **Implementation map.** Every component below is implemented. Core runtime, LLM contract, reflection and guardrail hooks: `@agent-framework/core`. LLM gateway: `@agent-framework/llm` + `provider-anthropic`. Tool runtime: `@agent-framework/tools`. Context engine: `@agent-framework/context`. Knowledge: `@agent-framework/knowledge`. Memory: `@agent-framework/memory`. Planning, orchestration, multi-agent: `@agent-framework/orchestration`. Security and guardrails: `@agent-framework/security`. Observability: `@agent-framework/observability`. Evaluation: `@agent-framework/evaluation`. Persistence and execution/durability: `@agent-framework/production`. Guides: [docs index](../README.md).
+
 ## 1. Purpose and scope
 
 The framework is a **runtime + intelligence separation** layer. It makes deterministic software responsible for execution, state, permissions, persistence, observability, and cost control. It makes LLMs responsible for judgment, reasoning, extraction, planning hints, and verification where appropriate.
