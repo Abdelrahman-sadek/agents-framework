@@ -11,5 +11,21 @@
   "exclude": [
     "src/**/*.test.ts"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../evaluation"
+    },
+    {
+      "path": "../observability"
+    },
+    {
+      "path": "../production"
+    },
+    {
+      "path": "../tools"
+    }
+  ]
 }
