@@ -281,3 +281,20 @@ describe("approval: modify and escalate", () => {
     expect(pay).toHaveBeenCalledOnce();
   });
 });
+
+describe("concurrent resume", () => {
+  test("two resumes of the same approval execute the tool once", async () => {
+    const execute = vi.fn(async ({ amount }: { amount: number }) => ({ amount }));
+    const refund = defineTool({ name: "refund", description: "Refund", input: z.object({ amount: z.number() }), approval: { required: true }, execute });
+    const { agent } = setup(
+      [{ toolCalls: [{ id: "c1", name: "refund", arguments: { amount: 5 } }] }, { text: "done" }, { text: "done" }],
+      [refund],
+    );
+    const paused = await agent.run({ input: "refund" });
+    const approvals = [{ approvalId: paused.pendingApprovals[0]?.approvalId ?? "", decision: "approved" as const }];
+    const results = await Promise.allSettled([agent.resume({ runId: paused.runId, approvals }), agent.resume({ runId: paused.runId, approvals })]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((r) => r.status === "rejected")?.reason).toMatchObject({ message: expect.stringMatching(/already being resumed/) });
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+});

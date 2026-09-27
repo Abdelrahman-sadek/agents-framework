@@ -38,6 +38,7 @@ Controls on every command:
 - it runs through `execFile` with **no shell**, so pipes, redirects and `;` are passed literally;
 - the environment is scrubbed down to an allow-list;
 - time and output are capped;
+- path-like arguments (and `--flag=value` values) must stay inside `cwd`: absolute paths, `..`, symlink escapes and `~` are rejected (`confinePaths: false` turns this off for commands whose arguments are never paths);
 - approval is required by default, and the permission is `sandbox.exec`.
 
 ## Isolation

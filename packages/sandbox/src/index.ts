@@ -199,10 +199,18 @@ export interface CommandToolOptions {
   envAllowList?: readonly string[];
   /** Require human approval. Default true. */
   approval?: boolean;
+  /**
+   * Treat path-like arguments (containing "/" or "\\", or starting with "." or "~")
+   * as workspace paths: absolute paths, traversal and symlink escapes are rejected.
+   * Default true. Set false only for commands whose arguments are never paths.
+   */
+  confinePaths?: boolean;
   permission?: string;
   name?: string;
   runner?: SandboxRunner;
 }
+
+const looksLikePath = (arg: string): boolean => arg.includes("/") || arg.includes("\\") || arg.startsWith(".") || arg.startsWith("~");
 
 /** A single command-execution tool with an allow-list, no shell, and bounded time and output. */
 export function commandTool(options: CommandToolOptions): AnyTool {
@@ -228,6 +236,12 @@ export function commandTool(options: CommandToolOptions): AnyTool {
       for (const arg of args) {
         if (arg.startsWith("-") && !allowFlags.has(arg.split("=")[0] ?? arg)) throw new PolicyViolationError(`Flag '${arg}' is not allowed`);
         if (arg.includes("\0")) throw new PolicyViolationError("Invalid argument");
+        // For an allowed "--flag=value", the value is checked like a positional argument.
+        const value = arg.startsWith("-") ? (arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : "") : arg;
+        if (options.confinePaths !== false && looksLikePath(value)) {
+          if (value.startsWith("~")) throw new PolicyViolationError(`Argument '${arg}' refers to a home directory; use workspace-relative paths`);
+          await confine(options.cwd, value, { mustExist: false });
+        }
       }
       const env: Record<string, string> = {};
       for (const key of options.envAllowList ?? ["PATH", "HOME", "LANG"]) {

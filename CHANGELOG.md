@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Egress: `isPrivateAddress` parses IPv6 fully, so IPv4-mapped (including the `::ffff:7f00:1` form `URL` normalises to), translated, NAT64, 6to4, Teredo, site-local and multicast addresses are blocked, plus the missing IPv4 reserved ranges. `safeFetch` pins connections by re-checking the resolved address at connect time (new optional `EgressPolicy.allowsAddress`); `defineHttpTool` accepts `fetchImpl`.
+- Approvals: concurrent `resume()` calls for the same run can no longer both execute the approved tools. New optional `RunStateStore.claim()` compare-and-set, implemented by the in-memory, PostgreSQL and SQLite stores, with a per-process guard for stores without it.
+- Sandbox: `commandTool` confines path-like arguments and `--flag=value` values to the workspace (`confinePaths`, default true).
+- Guardrails: prompt-injection detection normalises obfuscated text and covers reversed-order, rule-injection and non-English overrides; PII detection covers dotted card numbers, space-separated SSNs and any-case or grouped IBANs (mod-97 verified).
 - An escalation without `escalateTo` is rejected by `resume()` instead of failing the run.
 
 ### Added — Phases 3–14
