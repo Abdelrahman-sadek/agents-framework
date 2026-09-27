@@ -79,7 +79,14 @@ importers:
         specifier: workspace:*
         version: link:../knowledge
 
-  packages/observability: {}
+  packages/observability:
+    dependencies:
+      '@agent-framework/core':
+        specifier: workspace:*
+        version: link:../core
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.1
 
   packages/orchestration:
     dependencies:
@@ -338,6 +345,10 @@ packages:
     engines: {node: ^22.20 || ^24.12 || >=25}
     cpu: [x64]
     os: [linux]
+
+  '@opentelemetry/api@1.9.1':
+    resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
+    engines: {node: '>=8.0.0'}
 
   '@rollup/rollup-android-arm-eabi@4.63.5':
     resolution: {integrity: sha512-J25QJU+B78T4FhhBsNpLJyVWOi31mwtpcMwywHmOKH65Q9IWGA81gPj+dnwlhU8wktVriYE+tFAaQgrnJRzAZg==}
@@ -1247,6 +1258,8 @@ snapshots:
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
+
+  '@opentelemetry/api@1.9.1': {}
 
   '@rollup/rollup-android-arm-eabi@4.63.5':
     optional: true
