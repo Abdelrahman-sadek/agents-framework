@@ -1,0 +1,30 @@
+{
+  "name": "@agent-framework/mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol adapter: expose MCP server tools as framework tools (validated, authorized, audited)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run --root ../.. --project mcp"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*",
+    "@agent-framework/tools": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.1.0"
+  }
+}
