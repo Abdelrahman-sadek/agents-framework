@@ -37,6 +37,32 @@ Each provider reports `ModelCapabilities`: locality, context window, max output,
 
 Override per selector (`models.openai("gpt", { pricing: … })`) or per adapter (`models: { … }`).
 
+## Streaming
+
+Both adapters implement `stream()` (Anthropic SDK streaming; SSE for OpenAI-compatible servers, including tool-call deltas). Agents stream through `agent.stream()` or `onTextDelta` ([Agents › Streaming](./agents.md#streaming)).
+
+## Model router
+
+```ts
+import { createModelRouter } from "@agent-framework/llm";
+
+const router = createModelRouter({
+  id: "router",
+  strategy: "cheapest",                 // "fastest" | "best" | "local-first"
+  candidates: [
+    { provider: local, modelId: "llama3.1:8b", quality: 0.6 },
+    { provider: claude, modelId: "claude-sonnet-5", quality: 0.85 },
+    { provider: claude, modelId: "claude-opus-5", quality: 1 },
+  ],
+});
+createRuntime({ providers: [router] });
+defineAgent({ name: "a", model: models.custom("router", "auto"), runtime });
+```
+
+Hard requirements filter candidates first: tool calling when tools are sent, structured output when a schema is requested, context size, and the request's data classification (`metadata.dataClassification` or `classify`) against each model's `allowedDataClassifications`. The strategy ranks what remains, and retryable failures fall through to the next candidate.
+
+Other vendors that expose the Chat Completions format work through `openAICompatibleProvider` as well, including Gemini's OpenAI-compatible endpoint and Azure OpenAI deployments.
+
 ## Gateway wrappers
 
 - `withCircuitBreaker`: after N consecutive retryable failures, fail fast (retryable) until a trial request succeeds.

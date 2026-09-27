@@ -117,6 +117,7 @@ defineTool({
 - An approval request carries `approvalId`, `toolCallId`, `toolName`, `argumentsHash` (SHA-256 of the canonical validated arguments), `requestedAt`, `expiresAt` and `reason`.
 - A decision only applies to that exact tool call and those exact arguments. A mismatched call id, different arguments, a forged approval id or an expired request is **denied**.
 - Authorization runs again before an approved call executes.
+- Reviewers can also approve with **modified arguments** (validated and authorized again) or **escalate** to another reviewer ([Agents › Human approval](./agents.md#human-approval)).
 
 The agent-side flow (pause, persist, resume) is described in [Agents › Human approval](./agents.md#human-approval).
 
@@ -170,11 +171,11 @@ Every invocation, including denials and validation failures, writes one `ToolAud
 
 `kind` (`native`, `http`, `database`, `filesystem`, `sandbox`, `mcp`, `custom`) describes how a tool reaches the outside world, and policies can use it. HTTP, MCP and sandbox integrations are **adapters that produce ordinary `defineTool` tools**. The framework's tool representation stays the source of truth ([ADR 010](./decisions/010-mcp-integration.md), [ADR 018](./decisions/018-tool-system.md)).
 
-Planned adapters:
+Adapters:
 
-- **MCP:** list tools on an MCP server, map their JSON Schemas to validators, and call through the MCP client inside `execute`. MCP servers never bypass policy, approval or audit.
-- **HTTP:** declarative endpoint tools with an egress allow-list (SSRF protection) and secret injection outside model context.
-- **Sandbox:** filesystem, shell, git and network capabilities as narrowly scoped tools running in an isolated environment with resource limits. A model never gets raw OS authority.
+- **MCP** ([guide](./mcp.md)): MCP server tools become framework tools; they never bypass policy, approval or audit.
+- **HTTP** ([security guide](./security.md#egress-and-ssrf)): `defineHttpTool` with an egress allow-list and secret injection outside model context.
+- **Sandbox** ([guide](./sandbox.md)): workspace-confined file tools and allow-listed commands behind a `SandboxRunner` port. A model never gets raw OS authority.
 
 ## Checklist for a new tool
 

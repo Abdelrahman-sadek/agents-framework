@@ -59,6 +59,17 @@ await service.approve(runId, [{ approvalId, decision: "approved", decidedBy }]);
 
 Temporal or another workflow engine can drive the same `run` / `resume` / `recover` entry points ([ADR 013](./decisions/013-temporal-durable-execution.md)); the core has no dependency on it.
 
+## Shared stores
+
+| Store | Class | Notes |
+| --- | --- | --- |
+| Vector search | `PgVectorStore(client, { dimensions })` | pgvector HNSW (cosine), tenant visibility and metadata filters in SQL; pass as `createKnowledgeBase({ store })` |
+| Memory | `PostgresMemoryStore(client)` | Pass as `createMemory({ store })`; authorization stays in `Memory` |
+| Rate limits | `RedisRateLimiter(redis)` | Fixed window shared across instances |
+| Idempotency | `RedisIdempotencyStore(redis)` or `PostgresIdempotencyStore(client)` | Shared across instances |
+
+`redis` is anything with `get`, `set`, `incr` and `pexpire` (for example ioredis). Every PostgreSQL class has `migrate()`.
+
 ## Operations
 
 - `createHealthCheck({ db: () => pool.query("select 1"), queue: ..., model: { check: ping, critical: false } })` → `ok | degraded | down`.

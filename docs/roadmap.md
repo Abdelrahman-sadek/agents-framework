@@ -22,19 +22,27 @@ The framework was built one phase at a time. Every phase ships with typecheck, l
 | — | Provider adapters and model gateway | ✅ | [models](./models.md), [ADR 020](./decisions/020-provider-adapters.md) |
 | — | CLI and agent manifests | ✅ | [cli](./cli.md), [ADR 021](./decisions/021-manifest-and-cli.md) |
 
+### Post-plan additions
+
+| Item | Status | Where |
+| --- | --- | --- |
+| Streaming through the run loop and adapters | ✅ | [agents › streaming](./agents.md#streaming) |
+| Approval modify / escalate | ✅ | [agents › human approval](./agents.md#human-approval) |
+| Skills | ✅ | [skills](./skills.md) |
+| Model router | ✅ | [models › router](./models.md#model-router) |
+| pgvector, PostgreSQL memory, Redis rate-limit / idempotency stores | ✅ | [production › shared stores](./production.md#shared-stores) |
+| MCP adapter | ✅ | [mcp](./mcp.md) |
+| Sandbox tools | ✅ | [sandbox](./sandbox.md) |
+| Run dashboard | ✅ | [observability › dashboard](./observability.md#dashboard) |
+| Release workflow | ✅ | `.github/workflows/release.yml` |
+
 ## Next
 
-These are known gaps and planned work. Each is a candidate for an ADR and a focused PR.
-
-- **Streaming in the run loop:** `LLMProvider.stream` exists; the runtime and adapters don't use it yet.
-- **More adapters:** pgvector `VectorStore`, Redis idempotency/rate-limit/queue, PostgreSQL `MemoryStore`, an OpenTelemetry-native exporter preset, a Temporal worker, and Gemini and OpenAI-native adapters.
-- **MCP adapter:** expose MCP server tools as `defineTool` tools ([ADR 010](./decisions/010-mcp-integration.md)).
-- **Sandbox tools:** filesystem, shell and git capabilities in an isolated runtime ([extension points](./architecture/extension-points.md#sandbox-tools)).
-- **Skills:** composable capabilities with schemas, permissions and evaluation requirements.
-- **Model router:** choose a model per task from capabilities, cost, latency and locality.
-- **Approvals:** modify-and-approve and escalation workflows.
-- **Dashboard / playground:** run inspection UI on top of the event stream and state stores.
-- **Publishing:** settle the npm scope ([ADR 014](./decisions/014-package-identity.md)) and release 0.x.
+- **Publish 0.x:** choose the npm scope ([ADR 014](./decisions/014-package-identity.md)), add the `NPM_TOKEN` secret and push a `v0.1.0` tag.
+- **Container `SandboxRunner`:** Docker or microVM runner with no network, a read-only root and quotas.
+- **Temporal worker:** Temporal activities that call `run`, `resume` and `recover` ([ADR 013](./decisions/013-temporal-durable-execution.md)).
+- **Native Gemini adapter:** Gemini already works through its OpenAI-compatible endpoint.
+- **Dashboard auth and live approvals:** approve or reject from the UI through `AgentService`.
 
 ## Cross-cutting rules
 

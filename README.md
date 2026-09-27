@@ -104,8 +104,8 @@ model requests tool ─▶ parse ─▶ validate ─▶ authorize ─▶ approva
 
 | Area | What you get | Package |
 | --- | --- | --- |
-| **Runtime** | Agent definition, run loop, explicit state, typed events, error model, limits (steps, tool calls, tokens, cost, time), cancellation, resume, crash recovery | `core` |
-| **Models** | Provider contract with capability metadata; Anthropic (official SDK) and OpenAI-compatible adapters (OpenAI, OpenRouter, vLLM, Ollama); circuit breaker, rate limit, fallback | `llm`, `provider-anthropic` |
+| **Runtime** | Agent definition, run loop, explicit state, typed events, error model, limits (steps, tool calls, tokens, cost, time), cancellation, streaming, resume (approve / modify / reject / escalate), crash recovery | `core` |
+| **Models** | Provider contract with capability metadata; Anthropic (official SDK) and OpenAI-compatible adapters (OpenAI, OpenRouter, vLLM, Ollama, Gemini-compatible); streaming; model router; circuit breaker, rate limit, fallback | `llm`, `provider-anthropic` |
 | **Tools** | Zod schemas, deterministic authorization, argument-bound human approval, timeouts, retries, rate limits, idempotency, concurrency, audit, HTTP tools with SSRF protection | `tools`, `security` |
 | **Structured output** | JSON Schema response format, validation, correction loop | `core` |
 | **Context** | Token budgets, ranked context items with provenance, truncation, summarization | `context` |
@@ -115,10 +115,13 @@ model requests tool ─▶ parse ─▶ validate ─▶ authorize ─▶ approva
 | **Reflection** | Rule, citation, LLM-critic and cross-agent verifiers with bounded correction | `core`, `orchestration` |
 | **Multi-agent** | Supervisor, delegation with depth limits, pipeline, parallel | `orchestration` |
 | **Security** | Guardrails (PII, prompt injection, secrets, content), RBAC, ABAC, tenant isolation, data classification, egress control, secrets, identity | `security` |
-| **Observability** | OpenTelemetry spans and metrics, redaction, structured logs, cost tracking, run inspection | `observability` |
+| **Observability** | OpenTelemetry spans and metrics, redaction, structured logs, cost tracking, run inspection, local dashboard | `observability` |
 | **Evaluation** | Golden datasets, 12 evaluators including LLM judge, thresholds, regression comparison | `evaluation` |
-| **Production** | PostgreSQL/SQLite state, durable queues with leases, workers with recovery, service API, health checks, config validation | `production` |
-| **Developer experience** | `agent create / dev / test / evaluate / inspect / trace / validate`, JSON agent manifests, offline test models | `cli`, `core/testing` |
+| **Production** | PostgreSQL/SQLite state, pgvector, Redis stores, durable queues with leases, workers with recovery, service API, health checks, config validation | `production` |
+| **Skills** | Reusable capabilities with instructions, tools, permissions, verifiers, dependencies and evaluation cases | `core` |
+| **MCP** | MCP server tools as validated, authorized, audited framework tools | `mcp` |
+| **Sandbox** | Workspace-confined file tools and allow-listed commands without a shell | `sandbox` |
+| **Developer experience** | `agent create / dev / test / evaluate / inspect / trace / dashboard / validate`, JSON agent manifests, offline test models | `cli`, `core/testing` |
 
 ## Getting started
 
@@ -173,6 +176,8 @@ The runtime only talks to ports, so everything at the end of an arrow is replace
 | [`@agent-framework/observability`](./packages/observability) | OpenTelemetry, logs, cost, inspection | [observability](./docs/observability.md) |
 | [`@agent-framework/evaluation`](./packages/evaluation) | Datasets, evaluators, reports | [evaluation](./docs/evaluation.md) |
 | [`@agent-framework/production`](./packages/production) | Durable state, queues, workers, service | [production](./docs/production.md) |
+| [`@agent-framework/mcp`](./packages/mcp) | MCP servers as framework tools | [mcp](./docs/mcp.md) |
+| [`@agent-framework/sandbox`](./packages/sandbox) | Workspace and command tools | [sandbox](./docs/sandbox.md) |
 | [`@agent-framework/cli`](./packages/cli) | `agent` CLI and manifests | [cli](./docs/cli.md) |
 
 ## Examples
@@ -188,14 +193,14 @@ The runtime only talks to ports, so everything at the end of an arrow is replace
 
 ## Documentation
 
-- **Guides:** [Getting started](./docs/getting-started.md) · [Agents](./docs/agents.md) · [Tools](./docs/tools.md) · [Models](./docs/models.md) · [Context](./docs/context.md) · [Knowledge](./docs/knowledge.md) · [Memory](./docs/memory.md) · [Planning](./docs/planning.md) · [Reflection](./docs/reflection.md) · [Orchestration](./docs/orchestration.md) · [Multi-agent](./docs/multi-agent.md) · [Security](./docs/security.md) · [Guardrails](./docs/guardrails.md) · [Observability](./docs/observability.md) · [Evaluation](./docs/evaluation.md) · [Production](./docs/production.md) · [CLI](./docs/cli.md) · [Troubleshooting](./docs/troubleshooting.md)
+- **Guides:** [Getting started](./docs/getting-started.md) · [Agents](./docs/agents.md) · [Tools](./docs/tools.md) · [Models](./docs/models.md) · [Skills](./docs/skills.md) · [MCP](./docs/mcp.md) · [Sandbox](./docs/sandbox.md) · [Context](./docs/context.md) · [Knowledge](./docs/knowledge.md) · [Memory](./docs/memory.md) · [Planning](./docs/planning.md) · [Reflection](./docs/reflection.md) · [Orchestration](./docs/orchestration.md) · [Multi-agent](./docs/multi-agent.md) · [Security](./docs/security.md) · [Guardrails](./docs/guardrails.md) · [Observability](./docs/observability.md) · [Evaluation](./docs/evaluation.md) · [Production](./docs/production.md) · [CLI](./docs/cli.md) · [Troubleshooting](./docs/troubleshooting.md)
 - **Architecture:** [Overview](./docs/architecture/README.md) · [Core runtime](./docs/architecture/core-runtime.md) · [Public API](./docs/architecture/public-api.md) · [Events](./docs/architecture/events.md) · [Errors](./docs/architecture/errors.md) · [Configuration](./docs/architecture/configuration.md) · [Extension points](./docs/architecture/extension-points.md)
 - **Security:** [Model and controls](./docs/security/README.md) · [Threat model](./docs/security/threat-model.md)
 - **Decisions:** [ADRs](./docs/decisions/README.md) · [Open questions](./docs/decisions/open-questions.md)
 
 ## Roadmap
 
-All 14 phases of the original plan are implemented: architecture, core runtime, tools, structured outputs, context, knowledge, memory, planning, reflection, orchestration, multi-agent, security, observability, evaluation and production. Next up: streaming through the run loop, pgvector and Redis adapters, MCP and sandbox tools, skills, a model router and a run-inspection dashboard. See [docs/roadmap.md](./docs/roadmap.md).
+All 14 phases of the original plan are implemented. The post-plan items are done too: streaming, skills, model router, approval escalation, pgvector and Redis stores, MCP, sandbox tools and a dashboard. Next up: publishing 0.x to npm, a container sandbox runner, a Temporal worker and a native Gemini adapter. See [docs/roadmap.md](./docs/roadmap.md).
 
 ## Contributing
 

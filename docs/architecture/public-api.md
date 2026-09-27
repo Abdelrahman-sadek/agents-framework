@@ -64,13 +64,15 @@ const result = await agent.run({ input: "Research X" });
 | `@agent-framework/memory` | `createMemory`, `Memory`, `InMemoryMemoryStore`, `DEFAULT_SECRET_PATTERNS` |
 | `@agent-framework/orchestration` | `defineOrchestrator`, `defineWorker`, `staticPlanner`, `llmPlanner`, `validatePlan`, `agentAsTool`, `supervisor`, `runPipeline`, `runParallel`, `agentVerifier` |
 | `@agent-framework/security` | guardrails (`piiGuardrail`, `promptInjectionGuardrail`, `secretLeakGuardrail`, `contentPolicyGuardrail`, `maxLengthGuardrail`), policies (`rbacPolicy`, `abacPolicy`, `tenantIsolationPolicy`, `dataClassificationPolicy`), `createEgressPolicy`, `safeFetch`, `defineHttpTool`, `envSecrets`, `principalFromClaims` |
-| `@agent-framework/observability` | `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `readEventFile`, `CostTracker`, `inspectRun`, `formatRunReport` |
-| `@agent-framework/evaluation` | `defineDataset`, `defineEvaluation`, `evaluators`, `formatReport`, `compareReports` |
-| `@agent-framework/production` | `createFramework`, `AgentWorker`, `AgentService`, run-state stores, job queues, `createHealthCheck`, `installGracefulShutdown`, `openSqlite` |
+| `@agent-framework/observability` | `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `readEventFile`, `CostTracker`, `inspectRun`, `formatRunReport`, `createDashboardServer` |
+| `@agent-framework/evaluation` | `skillDataset`, `defineDataset`, `defineEvaluation`, `evaluators`, `formatReport`, `compareReports` |
+| `@agent-framework/production` | `PgVectorStore`, `PostgresMemoryStore`, `RedisRateLimiter`, `RedisIdempotencyStore`, `createFramework`, `AgentWorker`, `AgentService`, run-state stores, job queues, `createHealthCheck`, `installGracefulShutdown`, `openSqlite` |
 | `@agent-framework/provider-anthropic` | `anthropicProvider`, `ANTHROPIC_MODELS` |
+| `@agent-framework/mcp` | `mcpTools`, `connectStdioServer`, `connectHttpServer` |
+| `@agent-framework/sandbox` | `workspaceTools`, `commandTool`, `confine`, `localProcessRunner` |
 | `@agent-framework/cli` | `runCli`, `defineAgentFromManifest`, `parseManifest`, `checkManifest` (+ `agent` binary) |
 
-Core additions since Phase 2: `runtime.recover` / `agent.recover`, `ContextProvider` / `ContextItem`, `Guardrail`, `Verifier` with `ruleVerifier` / `citationVerifier` / `llmCritic`, `EmbeddingProvider`, `createEventEmitter`, `createRuleProvider` (testing).
+Core additions since Phase 2: `agent.stream`, `StreamCallbacks`, `defineSkill`, approval `modified` / `escalated` decisions, `runtime.recover` / `agent.recover`, `ContextProvider` / `ContextItem`, `Guardrail`, `Verifier` with `ruleVerifier` / `citationVerifier` / `llmCritic`, `EmbeddingProvider`, `createEventEmitter`, `createRuleProvider` (testing).
 
 ## Configuration levels
 

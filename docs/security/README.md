@@ -191,6 +191,11 @@ Controls:
 | Bounded delegation depth; delegates act for the same user | `agentAsTool` | `orchestration.test.ts` |
 | Telemetry redaction; spans carry no content | `redactingSink`, `openTelemetrySink` | `observability.test.ts` |
 | Production config refuses in-memory audit/state and missing budgets | `createFramework` | `production.test.ts` |
+| Workspace confinement (absolute paths, traversal, symlink escapes) and approval-gated writes | `@agent-framework/sandbox` | `sandbox.test.ts` |
+| Commands: no shell, allow-listed subcommands and flags, scrubbed env, time/output caps, approval | `commandTool` | `sandbox.test.ts` |
+| MCP tools validated locally and authorized per server | `@agent-framework/mcp` | `mcp.test.ts` |
+| Approval modifications re-validated and re-authorized; escalation cannot execute | tool runtime | `agent-tools.integration.test.ts` |
+| Dashboard binds to localhost, is read-only and renders data as text | `createDashboardServer` | `observability.test.ts` |
 
 Guides: [Security](../security.md), [Guardrails](../guardrails.md).
 

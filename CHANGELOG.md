@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added — post-plan
+
+- Streaming: `agent.stream()`, `onTextDelta` / `onEvent`; streaming in the Anthropic and OpenAI-compatible adapters.
+- Approvals: `modified` (reviewer-supplied arguments, re-validated) and `escalated` decisions; `TOOL_APPROVAL_ESCALATED`.
+- Skills: `defineSkill` with dependencies, merged idempotently by `defineAgent`; `skillDataset` for evaluation.
+- `createModelRouter` with requirement filters and cheapest/fastest/best/local-first strategies.
+- Production stores: `PgVectorStore`, `PostgresMemoryStore`, `RedisRateLimiter`, `RedisIdempotencyStore`.
+- `@agent-framework/mcp` (MCP servers as framework tools) and `@agent-framework/sandbox` (workspace-confined files, allow-listed commands).
+- Dashboard: `createDashboardServer` and `agent dashboard`.
+- Release workflow and publish metadata.
+
+### Fixed
+
+- An escalation without `escalateTo` is rejected by `resume()` instead of failing the run.
+
 ### Added — Phases 3–14
 
 - **Structured outputs (3):** JSON Schema `responseFormat` derived from the output schema; correction loop bounded by `maxOutputCorrections`.
