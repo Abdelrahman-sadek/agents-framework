@@ -45,7 +45,17 @@ importers:
 
   packages/evaluation: {}
 
-  packages/knowledge: {}
+  packages/knowledge:
+    dependencies:
+      '@agent-framework/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agent-framework/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.1.0
+        version: 4.6.5
 
   packages/llm:
     dependencies:
