@@ -24,6 +24,8 @@
   "dependencies": {
     "@agent-framework/core": "workspace:*",
     "@agent-framework/tools": "workspace:*",
-    "zod": "^4.1.0"
+    "zod": "^4.1.0",
+    "@agent-framework/knowledge": "workspace:*",
+    "@agent-framework/memory": "workspace:*"
   }
 }

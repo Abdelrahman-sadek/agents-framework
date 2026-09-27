@@ -138,6 +138,12 @@ importers:
       '@agent-framework/core':
         specifier: workspace:*
         version: link:../core
+      '@agent-framework/knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@agent-framework/memory':
+        specifier: workspace:*
+        version: link:../memory
       '@agent-framework/tools':
         specifier: workspace:*
         version: link:../tools
