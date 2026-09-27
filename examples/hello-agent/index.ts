@@ -6,10 +6,10 @@
  *
  *   pnpm example:hello
  */
-import { InMemoryEventSink, createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { models } from "@agent-framework/llm";
-import { InMemoryAuditLog, ToolRuntime, defineTool } from "@agent-framework/tools";
+import { InMemoryEventSink, createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { models } from "@agent-farmework/llm";
+import { InMemoryAuditLog, ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 // 1. A tool: typed input/output, validated at runtime, permission-gated.

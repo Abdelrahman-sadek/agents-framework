@@ -1,6 +1,6 @@
-import type { Chunk, MetadataFilter, VectorQuery, VectorRecord, VectorStore } from "@agent-framework/knowledge";
-import { scopeMatches, type MemoryQuery, type MemoryRecord, type MemoryStore } from "@agent-framework/memory";
-import type { IdempotencyStore, RateLimiter } from "@agent-framework/tools";
+import type { Chunk, MetadataFilter, VectorQuery, VectorRecord, VectorStore } from "@agent-farmework/knowledge";
+import { scopeMatches, type MemoryQuery, type MemoryRecord, type MemoryStore } from "@agent-farmework/memory";
+import type { IdempotencyStore, RateLimiter } from "@agent-farmework/tools";
 import { tableName, type SqlClient } from "./sql.js";
 
 // ------------------------------------------------------------------ pgvector

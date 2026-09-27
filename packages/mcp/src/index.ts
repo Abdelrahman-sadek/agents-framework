@@ -1,13 +1,13 @@
 /**
- * @agent-framework/mcp — Model Context Protocol as an adapter.
+ * @agent-farmework/mcp — Model Context Protocol as an adapter.
  *
  * MCP server tools become ordinary framework tools: arguments are validated
  * against the server's JSON Schema, calls pass the ToolRuntime pipeline
  * (policy, approval, rate limits, idempotency, audit), and results are
  * normalized. MCP is never the internal tool representation (ADR 010).
  */
-import { ConfigurationError, ToolError } from "@agent-framework/core";
-import { defineTool, type AnyTool, type ToolApproval } from "@agent-framework/tools";
+import { ConfigurationError, ToolError } from "@agent-farmework/core";
+import { defineTool, type AnyTool, type ToolApproval } from "@agent-farmework/tools";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { z } from "zod";
 

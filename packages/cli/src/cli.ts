@@ -4,10 +4,10 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import type { Agent } from "@agent-framework/core";
-import { compareReports, formatReport, type Evaluation, type EvaluationReport } from "@agent-framework/evaluation";
-import { createDashboardServer, formatRunReport, inspectRun, readEventFile } from "@agent-framework/observability";
-import { SqliteRunStateStore, openSqlite } from "@agent-framework/production";
+import type { Agent } from "@agent-farmework/core";
+import { compareReports, formatReport, type Evaluation, type EvaluationReport } from "@agent-farmework/evaluation";
+import { createDashboardServer, formatRunReport, inspectRun, readEventFile } from "@agent-farmework/observability";
+import { SqliteRunStateStore, openSqlite } from "@agent-farmework/production";
 import { checkManifest, parseManifest, type ManifestRegistry } from "./manifest.js";
 import { scaffold } from "./templates.js";
 

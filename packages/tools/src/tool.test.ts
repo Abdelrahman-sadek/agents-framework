@@ -1,4 +1,4 @@
-import { ConfigurationError } from "@agent-framework/core";
+import { ConfigurationError } from "@agent-farmework/core";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 import { defineTool, isTool } from "./tool.js";

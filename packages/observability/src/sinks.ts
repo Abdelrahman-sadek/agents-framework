@@ -1,5 +1,5 @@
 import { appendFileSync, readFileSync } from "node:fs";
-import type { AgentEvent, EventSink } from "@agent-framework/core";
+import type { AgentEvent, EventSink } from "@agent-farmework/core";
 
 export interface RedactionOptions {
   /** Payload keys whose values are replaced entirely (at any depth). */

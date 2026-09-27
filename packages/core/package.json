@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/core",
+  "name": "@agent-farmework/core",
   "version": "0.1.0",
   "description": "Deterministic agent runtime: agent definition, run loop, state, events, errors, limits, and provider/tool/decision/context ports",
   "license": "Apache-2.0",
@@ -28,10 +28,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

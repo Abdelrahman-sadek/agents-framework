@@ -6,7 +6,7 @@ This document tracks unresolved decisions and architectural risks after Phase 14
 
 ### Package identity and npm scope
 
-The repository uses `@agent-framework/*` as the working internal convention. Publication naming is not finalized until npm availability is checked explicitly.
+The repository uses `@agent-farmework/*` as the working internal convention. Publication naming is not finalized until npm availability is checked explicitly.
 
 Status: pending external verification before publish.
 

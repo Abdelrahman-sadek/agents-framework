@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/tools",
+  "name": "@agent-farmework/tools",
   "version": "0.1.0",
   "description": "Tool definition, schema validation, deterministic authorization, approval, timeout, retry, rate limiting, idempotency and audit",
   "license": "Apache-2.0",
@@ -23,15 +23,15 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
     "zod": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/tools"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

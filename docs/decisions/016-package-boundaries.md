@@ -26,35 +26,35 @@ Before Phase 1 implementation, the framework should verify that its package boun
 
 Keep the package set intentionally modest and merged where the responsibility is tightly coupled to the core runtime. The current recommended structure is:
 
-- `@agent-framework/core`
+- `@agent-farmework/core`
   - agent definition, agent run, state, events, errors, configuration primitives, fundamental types
   - this package should be the smallest possible stable core
-- `@agent-framework/llm`
+- `@agent-farmework/llm`
   - provider-independent LLM gateway
-- `@agent-framework/tools`
+- `@agent-farmework/tools`
   - tool definition and tool runtime
   - tool runtime depends on core and should coordinate with security/guardrails
-- `@agent-framework/context`
+- `@agent-farmework/context`
   - context engine
-- `@agent-framework/knowledge`
+- `@agent-farmework/knowledge`
   - documents, chunking, metadata, embeddings interface, vector store interface, retrieval, citations
-- `@agent-framework/memory`
+- `@agent-farmework/memory`
   - memory stores and memory policies
-- `@agent-framework/orchestration`
+- `@agent-farmework/orchestration`
   - orchestrator and workers
-- `@agent-framework/security`
+- `@agent-farmework/security`
   - identity, permissions, policy, guardrails, approvals, audit
-- `@agent-framework/observability`
+- `@agent-farmework/observability`
   - OpenTelemetry integration, cost tracking, run inspection helpers, redaction
-- `@agent-framework/evaluation`
+- `@agent-farmework/evaluation`
   - datasets and evaluators
-- `@agent-framework/cli`
+- `@agent-farmework/cli`
   - developer CLI
 
 **Merge reasoning**
 
 - `runtime` should **not** be a separate top-level package in the initial structure. The runtime is the composition of core + LLM + tools + context + security + observability, wired together by the framework. Making "runtime" a separate package too early creates an artificial boundary and risks splitting core execution concepts across packages.
-- `planning` is intentionally implemented inside `@agent-framework/orchestration` for now. Planning is an orchestration concern, and separating it too early would add package count without a clear cohesion benefit.
+- `planning` is intentionally implemented inside `@agent-farmework/orchestration` for now. Planning is an orchestration concern, and separating it too early would add package count without a clear cohesion benefit.
 - `cli` stays separate because it is an interface layer with different dependency and deployment concerns.
 
 **What is deliberately not a package**

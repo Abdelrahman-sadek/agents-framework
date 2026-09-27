@@ -1,11 +1,11 @@
 # Observability
 
-`@agent-framework/observability` consumes the framework's typed [event stream](./architecture/events.md). Every sink is an `EventSink`: attach as many as you like to `createRuntime({ events })` or an orchestrator. A failing sink never breaks a run.
+`@agent-farmework/observability` consumes the framework's typed [event stream](./architecture/events.md). Every sink is an `EventSink`: attach as many as you like to `createRuntime({ events })` or an orchestrator. A failing sink never breaks a run.
 
 ## OpenTelemetry
 
 ```ts
-import { openTelemetrySink } from "@agent-framework/observability";
+import { openTelemetrySink } from "@agent-farmework/observability";
 import { metrics, trace } from "@opentelemetry/api";
 
 createRuntime({ providers, events: [openTelemetrySink({ tracer: trace.getTracer("agents"), meter: metrics.getMeter("agents") })] });

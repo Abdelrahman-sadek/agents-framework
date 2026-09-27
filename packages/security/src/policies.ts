@@ -1,5 +1,5 @@
-import { hasPermission, type Principal } from "@agent-framework/core";
-import type { ToolAuthorizationRequest, ToolPolicy } from "@agent-framework/tools";
+import { hasPermission, type Principal } from "@agent-farmework/core";
+import type { ToolAuthorizationRequest, ToolPolicy } from "@agent-farmework/tools";
 
 export type RoleMap = Readonly<Record<string, readonly string[]>>;
 

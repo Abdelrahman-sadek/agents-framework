@@ -1,5 +1,5 @@
 /**
- * @agent-framework/knowledge — provider-independent knowledge / RAG.
+ * @agent-farmework/knowledge — provider-independent knowledge / RAG.
  */
 export { createKnowledgeBase, lexicalReranker } from "./knowledge-base.js";
 export type { KnowledgeBase, KnowledgeBaseOptions, Reranker, SearchMode, SearchOptions } from "./knowledge-base.js";

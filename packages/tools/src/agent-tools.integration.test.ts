@@ -1,5 +1,5 @@
-import { InMemoryEventSink, ToolError, createRuntime, defineAgent, sequentialIds, type RuntimeOptions } from "@agent-framework/core";
-import { createScriptedProvider, type ScriptedStep } from "@agent-framework/core/testing";
+import { InMemoryEventSink, ToolError, createRuntime, defineAgent, sequentialIds, type RuntimeOptions } from "@agent-farmework/core";
+import { createScriptedProvider, type ScriptedStep } from "@agent-farmework/core/testing";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { InMemoryAuditLog } from "./stores.js";

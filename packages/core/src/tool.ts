@@ -9,7 +9,7 @@ import type { JsonSchema } from "./schema.js";
  * The agent runtime only knows that a tool has a name, a description and a
  * parameter schema, and that calls go through a `ToolInvoker`. Validation,
  * authorization, approval, reliability and audit live behind the invoker
- * (`@agent-framework/tools`), so the model can never reach `execute` directly.
+ * (`@agent-farmework/tools`), so the model can never reach `execute` directly.
  */
 export interface AgentTool {
   readonly name: string;

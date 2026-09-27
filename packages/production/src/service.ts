@@ -1,4 +1,4 @@
-import { ValidationError, randomIds, type AgentRuntime, type ApprovalDecision, type ApprovalRequest, type IdGenerator, type Principal, type SerializedError, type UsageTotals } from "@agent-framework/core";
+import { ValidationError, randomIds, type AgentRuntime, type ApprovalDecision, type ApprovalRequest, type IdGenerator, type Principal, type SerializedError, type UsageTotals } from "@agent-farmework/core";
 import type { JobQueue } from "./queue.js";
 
 export interface RunStatus {

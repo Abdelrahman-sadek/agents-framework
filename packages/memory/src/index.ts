@@ -1,5 +1,5 @@
 /**
- * @agent-framework/memory — memory separate from knowledge.
+ * @agent-farmework/memory — memory separate from knowledge.
  */
 export { DEFAULT_SECRET_PATTERNS, Memory, createMemory } from "./memory.js";
 export type { MemoryCandidate, MemoryOptions, MemoryPolicy, MemorySearchOptions, StoreResult } from "./memory.js";

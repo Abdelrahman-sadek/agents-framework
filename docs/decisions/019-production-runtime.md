@@ -9,7 +9,7 @@ Phase 14 requires durable execution, job recovery, idempotency, persistence and 
 **Decision**
 
 1. The durable-execution boundary stays the core's explicit state plus three entry points: `run`, `resume` (approvals) and a new `recover` (continue a `RUNNING` run after a crash). The loop checkpoints **before** executing a model turn's tool calls, so recovery re-invokes exactly the unanswered calls. Tool idempotency keys protect side effects on re-invocation.
-2. A new package, `@agent-framework/production`, holds infrastructure adapters:
+2. A new package, `@agent-farmework/production`, holds infrastructure adapters:
    - `RunStateStore`s for PostgreSQL (through a minimal `SqlClient` port that `pg.Pool` satisfies, so there is no driver dependency) and SQLite (`node:sqlite`);
    - PostgreSQL audit and idempotency stores;
    - a `JobQueue` port with leases (in-memory, SQLite, PostgreSQL `FOR UPDATE SKIP LOCKED`);

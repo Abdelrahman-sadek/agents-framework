@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/context",
+  "name": "@agent-farmework/context",
   "version": "0.1.0",
   "description": "Context engine: token budgets, prioritized context items, tool-result truncation, atomic tool turns, summarization",
   "license": "Apache-2.0",
@@ -23,14 +23,14 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*"
+    "@agent-farmework/core": "workspace:*"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/context"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

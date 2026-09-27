@@ -1,5 +1,5 @@
-import type { SerializedError } from "@agent-framework/core";
-import type { ToolInvocationStatus } from "@agent-framework/core";
+import type { SerializedError } from "@agent-farmework/core";
+import type { ToolInvocationStatus } from "@agent-farmework/core";
 
 // ------------------------------------------------------------------ audit
 

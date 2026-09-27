@@ -1,6 +1,6 @@
 # Context engine
 
-`@agent-framework/context`
+`@agent-farmework/context`
 
 The model never receives "the whole conversation" by default. Before every model call the runtime asks a `ContextManager` which messages and context items fit:
 
@@ -11,7 +11,7 @@ Available information → relevance → priority → token budget → final mode
 ## Setup
 
 ```ts
-import { createContextEngine, llmSummarizer } from "@agent-framework/context";
+import { createContextEngine, llmSummarizer } from "@agent-farmework/context";
 
 const runtime = createRuntime({
   providers,

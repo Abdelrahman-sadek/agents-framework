@@ -1,5 +1,5 @@
-import { createMemory } from "@agent-framework/memory";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createMemory } from "@agent-farmework/memory";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { PgVectorStore, PostgresMemoryStore, RedisIdempotencyStore, RedisRateLimiter, type RedisLike } from "./adapters.js";

@@ -1,6 +1,6 @@
 import { lookup as dnsLookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { PolicyViolationError, ToolError } from "@agent-framework/core";
+import { PolicyViolationError, ToolError } from "@agent-farmework/core";
 
 export interface EgressPolicyOptions {
   /** Hostnames allowed; `*.example.com` matches subdomains. Required: egress is deny-by-default. */

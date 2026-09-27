@@ -1,4 +1,4 @@
-import { hasPermission, type AgentIdentity, type DecisionEngine, type Principal } from "@agent-framework/core";
+import { hasPermission, type AgentIdentity, type DecisionEngine, type Principal } from "@agent-farmework/core";
 import type { ToolKind } from "./tool.js";
 
 export interface ToolAuthorizationRequest {

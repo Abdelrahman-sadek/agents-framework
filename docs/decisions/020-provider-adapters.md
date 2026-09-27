@@ -4,8 +4,8 @@
 
 **Decision**
 
-- Vendor SDKs live only in dedicated adapter packages. `@agent-framework/provider-anthropic` uses the official `@anthropic-ai/sdk`, the vendor's supported client, which also accepts Bedrock, Vertex and Foundry client variants through `client`. No other package imports a vendor SDK.
-- `@agent-framework/llm` ships a dependency-free, `fetch`-based adapter for the Chat Completions wire format, because it is the common interface of OpenAI, OpenRouter and local servers (vLLM, Ollama, LM Studio).
+- Vendor SDKs live only in dedicated adapter packages. `@agent-farmework/provider-anthropic` uses the official `@anthropic-ai/sdk`, the vendor's supported client, which also accepts Bedrock, Vertex and Foundry client variants through `client`. No other package imports a vendor SDK.
+- `@agent-farmework/llm` ships a dependency-free, `fetch`-based adapter for the Chat Completions wire format, because it is the common interface of OpenAI, OpenRouter and local servers (vLLM, Ollama, LM Studio).
 - Gateway behaviour is composed as provider wrappers: `withCircuitBreaker`, `withRateLimit`, `withFallback`. Retries stay in the runtime (`maxLLMRetries`); adapters disable SDK retries to avoid multiplying attempts.
 - Adapters normalize errors into `LLMError` / `RateLimitError` with correct `retryable` flags, and report cache-aware usage and pricing through `ModelCapabilities`.
 

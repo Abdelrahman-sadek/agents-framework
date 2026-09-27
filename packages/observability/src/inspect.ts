@@ -1,4 +1,4 @@
-import type { AgentEvent, SerializedError } from "@agent-framework/core";
+import type { AgentEvent, SerializedError } from "@agent-farmework/core";
 
 export interface RunReport {
   runId: string;

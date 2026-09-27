@@ -1,8 +1,8 @@
 /**
  * Security tests for the tool boundary. Each test states the attack it covers.
  */
-import { createRuntime, createDecisionEngine, defineAgent, ruleDecisionProvider, type AgentTool } from "@agent-framework/core";
-import { createScriptedProvider, type ScriptedStep } from "@agent-framework/core/testing";
+import { createRuntime, createDecisionEngine, defineAgent, ruleDecisionProvider, type AgentTool } from "@agent-farmework/core";
+import { createScriptedProvider, type ScriptedStep } from "@agent-farmework/core/testing";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { decisionPolicy, policy } from "./policy.js";

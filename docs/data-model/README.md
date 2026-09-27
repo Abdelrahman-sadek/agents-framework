@@ -1,6 +1,6 @@
 # Data model
 
-> **Implemented so far:** `AgentState`, `ExecutionStep`, `UsageTotals`, `PendingApproval` (`packages/core/src/types.ts`), `ApprovalRequest` / `ApprovalDecision` (`packages/core/src/tool.ts`), event envelopes (`events.ts`) and `ToolAuditRecord` (`packages/tools/src/stores.ts`). The entities below describe the full target model; durable tables are created by `migrate()` in `@agent-framework/production`: `agent_runs` (run state as JSONB, indexed by status and tenant), `agent_jobs` (queue with leases), `tool_audit` (append-only) and `tool_idempotency`.
+> **Implemented so far:** `AgentState`, `ExecutionStep`, `UsageTotals`, `PendingApproval` (`packages/core/src/types.ts`), `ApprovalRequest` / `ApprovalDecision` (`packages/core/src/tool.ts`), event envelopes (`events.ts`) and `ToolAuditRecord` (`packages/tools/src/stores.ts`). The entities below describe the full target model; durable tables are created by `migrate()` in `@agent-farmework/production`: `agent_runs` (run state as JSONB, indexed by status and tenant), `agent_jobs` (queue with leases), `tool_audit` (append-only) and `tool_idempotency`.
 
 The framework needs a persistent, reconstructable execution model. The data model is designed to answer:
 

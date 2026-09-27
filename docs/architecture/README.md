@@ -1,6 +1,6 @@
 # Architecture
 
-> **Implementation map.** Every component below is implemented. Core runtime, LLM contract, reflection and guardrail hooks: `@agent-framework/core`. LLM gateway: `@agent-framework/llm` + `provider-anthropic`. Tool runtime: `@agent-framework/tools`. Context engine: `@agent-framework/context`. Knowledge: `@agent-framework/knowledge`. Memory: `@agent-framework/memory`. Planning, orchestration, multi-agent: `@agent-framework/orchestration`. Security and guardrails: `@agent-framework/security`. Observability: `@agent-framework/observability`. Evaluation: `@agent-framework/evaluation`. Persistence and execution/durability: `@agent-framework/production`. Guides: [docs index](../README.md).
+> **Implementation map.** Every component below is implemented. Core runtime, LLM contract, reflection and guardrail hooks: `@agent-farmework/core`. LLM gateway: `@agent-farmework/llm` + `provider-anthropic`. Tool runtime: `@agent-farmework/tools`. Context engine: `@agent-farmework/context`. Knowledge: `@agent-farmework/knowledge`. Memory: `@agent-farmework/memory`. Planning, orchestration, multi-agent: `@agent-farmework/orchestration`. Security and guardrails: `@agent-farmework/security`. Observability: `@agent-farmework/observability`. Evaluation: `@agent-farmework/evaluation`. Persistence and execution/durability: `@agent-farmework/production`. Guides: [docs index](../README.md).
 
 ## 1. Purpose and scope
 
@@ -104,7 +104,7 @@ Result validation
 Audit
 ```
 
-**Implemented in Phase 2** (`@agent-framework/tools`). The concrete pipeline is parse → validate input → authorize → approval → rate limit → idempotency → concurrency → execute (timeout, retry) → validate output → audit. Guardrails plug in at the authorization step as `ToolPolicy`s until the Phase 11 guardrail engine arrives. See the [Tools guide](../tools.md) and [ADR 018](../decisions/018-tool-system.md).
+**Implemented in Phase 2** (`@agent-farmework/tools`). The concrete pipeline is parse → validate input → authorize → approval → rate limit → idempotency → concurrency → execute (timeout, retry) → validate output → audit. Guardrails plug in at the authorization step as `ToolPolicy`s until the Phase 11 guardrail engine arrives. See the [Tools guide](../tools.md) and [ADR 018](../decisions/018-tool-system.md).
 
 ### 4.3 Context Engine
 

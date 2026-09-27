@@ -36,4 +36,4 @@ Node ≥ 20.3; SQLite tests need Node ≥ 22.5 (they skip otherwise). Tests and 
 5. **Every behaviour change has a test.** Security-relevant changes get a test named after the attack.
 6. **Docs move with code.** Update the matching guide in `docs/`, the public API table and `CHANGELOG.md`.
 7. **Public contract changes need an ADR** in `docs/decisions/`.
-8. Use `createScriptedProvider` / `createRuleProvider` (`@agent-framework/core/testing`) for deterministic tests; never call live models in tests.
+8. Use `createScriptedProvider` / `createRuleProvider` (`@agent-farmework/core/testing`) for deterministic tests; never call live models in tests.

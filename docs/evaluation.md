@@ -1,6 +1,6 @@
 # Evaluation
 
-`@agent-framework/evaluation`
+`@agent-farmework/evaluation`
 
 ```ts
 const evaluation = defineEvaluation({

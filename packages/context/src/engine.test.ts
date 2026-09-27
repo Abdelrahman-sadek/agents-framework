@@ -1,5 +1,5 @@
-import { ContextLimitError, InMemoryEventSink, createRuntime, defineAgent, type ContextItem, type LLMMessage } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
+import { ContextLimitError, InMemoryEventSink, createRuntime, defineAgent, type ContextItem, type LLMMessage } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
 import { describe, expect, test, vi } from "vitest";
 import { createContextEngine, llmSummarizer, type TokenCounter } from "./engine.js";
 

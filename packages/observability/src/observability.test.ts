@@ -1,6 +1,6 @@
-import { InMemoryEventSink, createRuntime, defineAgent, sequentialIds } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { InMemoryEventSink, createRuntime, defineAgent, sequentialIds } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import type { Tracer } from "@opentelemetry/api";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";

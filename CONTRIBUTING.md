@@ -23,7 +23,7 @@ Tests and examples import packages from `src/` through path aliases, so no build
 ## Ground rules
 
 1. **The runtime stays deterministic.** Authorization, limits, retries, persistence and audit are never delegated to a model.
-2. **No vendor in the core.** `@agent-framework/core` must not import an LLM SDK, database driver, queue, OpenTelemetry or MCP. These are adapters.
+2. **No vendor in the core.** `@agent-farmework/core` must not import an LLM SDK, database driver, queue, OpenTelemetry or MCP. These are adapters.
 3. **No globals.** Dependencies flow through `createRuntime()` / `ToolRuntime` options.
 4. **No `any`** unless unavoidable. If you need it, add a comment explaining why.
 5. **Every behaviour change has a test.** Security-relevant changes get a test in a `security.test.ts` that names the attack.

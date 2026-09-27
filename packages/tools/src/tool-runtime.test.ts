@@ -1,4 +1,4 @@
-import { CancellationError, ToolError } from "@agent-framework/core";
+import { CancellationError, ToolError } from "@agent-farmework/core";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { allOf, permissionPolicy, policy } from "./policy.js";

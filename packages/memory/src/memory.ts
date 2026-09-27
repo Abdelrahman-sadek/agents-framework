@@ -10,8 +10,8 @@ import {
   type ContextProvider,
   type EmbeddingProvider,
   type IdGenerator,
-} from "@agent-framework/core";
-import { defineTool, type AnyTool } from "@agent-framework/tools";
+} from "@agent-farmework/core";
+import { defineTool, type AnyTool } from "@agent-farmework/tools";
 import { z } from "zod";
 import { InMemoryMemoryStore, type MemoryAccess, type MemoryKind, type MemoryProvenance, type MemoryRecord, type MemoryScope, type MemoryStore } from "./types.js";
 

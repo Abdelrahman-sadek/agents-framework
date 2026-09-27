@@ -1,5 +1,5 @@
 /**
- * @agent-framework/production — durable execution and operations.
+ * @agent-farmework/production — durable execution and operations.
  */
 export { openSqlite, tableName } from "./sql.js";
 export type { SqlClient, SqliteDatabase } from "./sql.js";

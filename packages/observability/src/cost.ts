@@ -1,4 +1,4 @@
-import type { AgentEvent, EventSink } from "@agent-framework/core";
+import type { AgentEvent, EventSink } from "@agent-farmework/core";
 
 export interface CostLine {
   key: string;

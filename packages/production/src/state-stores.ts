@@ -1,5 +1,5 @@
-import type { AgentState, RunStateStore } from "@agent-framework/core";
-import type { AuditSink, IdempotencyStore, ToolAuditRecord } from "@agent-framework/tools";
+import type { AgentState, RunStateStore } from "@agent-farmework/core";
+import type { AuditSink, IdempotencyStore, ToolAuditRecord } from "@agent-farmework/tools";
 import { tableName, type SqlClient, type SqliteDatabase } from "./sql.js";
 
 /** Durable run state in PostgreSQL (JSONB). Call `migrate()` once at deploy time. */

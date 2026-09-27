@@ -9,7 +9,7 @@ import {
   type Schema,
   type SerializedError,
   type Skill,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 
 export interface EvalCase {
   id: string;

@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/mcp",
+  "name": "@agent-farmework/mcp",
   "version": "0.1.0",
   "description": "Model Context Protocol adapter: expose MCP server tools as framework tools (validated, authorized, audited)",
   "license": "Apache-2.0",
@@ -23,17 +23,17 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
-    "@agent-framework/tools": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
+    "@agent-farmework/tools": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/mcp"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

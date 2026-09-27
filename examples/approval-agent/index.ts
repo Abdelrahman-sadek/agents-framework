@@ -7,10 +7,10 @@
  *
  *   pnpm example:approval
  */
-import { InMemoryRunStateStore, createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { models } from "@agent-framework/llm";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { InMemoryRunStateStore, createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { models } from "@agent-farmework/llm";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 const refundTool = defineTool({

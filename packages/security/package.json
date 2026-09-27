@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/security",
+  "name": "@agent-farmework/security",
   "version": "0.1.0",
   "description": "Security: guardrails (PII, prompt injection, content, secrets), RBAC/ABAC and tenant policies, SSRF-safe egress and HTTP tools, secrets, identity mapping",
   "license": "Apache-2.0",
@@ -23,16 +23,16 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
-    "@agent-framework/tools": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
+    "@agent-farmework/tools": "workspace:*",
     "zod": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/security"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

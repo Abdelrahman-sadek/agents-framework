@@ -3,7 +3,7 @@ name: Release
 # Publishes every package to GitHub Packages (npm registry) when a version
 # tag (v*) is pushed, or on demand. Authenticates with the built-in
 # GITHUB_TOKEN, which works because the repository is owned by the
-# organization that matches the package scope (@agent-framework).
+# organization that matches the package scope (@agent-farmework).
 on:
   push:
     tags: ["v*"]
@@ -24,7 +24,7 @@ jobs:
           node-version: 22
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@agent-framework"
+          scope: "@agent-farmework"
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm build

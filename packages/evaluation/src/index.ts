@@ -1,5 +1,5 @@
 /**
- * @agent-framework/evaluation — datasets, evaluators, reports and regression checks.
+ * @agent-farmework/evaluation — datasets, evaluators, reports and regression checks.
  */
 export { compareReports, defineDataset, skillDataset, defineEvaluation, evaluators, formatReport } from "./evaluation.js";
 export type {

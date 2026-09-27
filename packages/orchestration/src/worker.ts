@@ -1,4 +1,4 @@
-import { AgentError, ApprovalRequiredError, type Agent, type Principal } from "@agent-framework/core";
+import { AgentError, ApprovalRequiredError, type Agent, type Principal } from "@agent-farmework/core";
 
 export interface WorkerTask {
   runId: string;

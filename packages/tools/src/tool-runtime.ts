@@ -26,7 +26,7 @@ import {
   type ToolInvocation,
   type ToolInvocationResult,
   type ToolInvoker,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 import { z } from "zod";
 import { permissionPolicy, type ToolAuthorizationDecision, type ToolPolicy } from "./policy.js";
 import {

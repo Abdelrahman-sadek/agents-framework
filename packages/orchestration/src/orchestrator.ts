@@ -18,7 +18,7 @@ import {
   type Principal,
   type SerializedError,
   type Verifier,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 import { validatePlan, type Plan, type PlanStep, type PlanStepState, type Planner } from "./plan.js";
 import type { Worker } from "./worker.js";
 

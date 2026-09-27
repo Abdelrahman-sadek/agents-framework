@@ -2,12 +2,12 @@
 export function scaffold(name: string): Record<string, string> {
   const camel = name.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
   return {
-    "agent.ts": `import { createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+    "agent.ts": `import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
-// Replace with a real provider, e.g. anthropicProvider() from @agent-framework/provider-anthropic.
+// Replace with a real provider, e.g. anthropicProvider() from @agent-farmework/provider-anthropic.
 const provider = createScriptedProvider([{ text: "Hello from ${name}!" }], { id: "anthropic" });
 
 export const lookupTool = defineTool({
@@ -31,9 +31,9 @@ export const agent = defineAgent({
   runtime,
 });
 `,
-    "agent.test.ts": `import { createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime } from "@agent-framework/tools";
+    "agent.test.ts": `import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime } from "@agent-farmework/tools";
 import { expect, test } from "vitest";
 import { agent, lookupTool } from "./agent.js";
 
@@ -49,7 +49,7 @@ test("${name} answers using the lookup tool", async () => {
   expect(result.output).toContain("42");
 });
 `,
-    "eval.ts": `import { defineDataset, defineEvaluation, evaluators } from "@agent-framework/evaluation";
+    "eval.ts": `import { defineDataset, defineEvaluation, evaluators } from "@agent-farmework/evaluation";
 import { agent } from "./agent.js";
 
 export const evaluation = defineEvaluation({

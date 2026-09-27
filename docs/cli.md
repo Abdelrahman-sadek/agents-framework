@@ -1,6 +1,6 @@
 # CLI and manifests
 
-`@agent-framework/cli` provides the `agent` command.
+`@agent-farmework/cli` provides the `agent` command.
 
 | Command | Does |
 | --- | --- |

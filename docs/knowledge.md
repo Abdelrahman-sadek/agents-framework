@@ -1,6 +1,6 @@
 # Knowledge / RAG
 
-`@agent-framework/knowledge`
+`@agent-farmework/knowledge`
 
 ```
 Documents → parsing → chunking → metadata → embeddings → vector / keyword / hybrid search → reranking → context with citations
@@ -9,7 +9,7 @@ Documents → parsing → chunking → metadata → embeddings → vector / keyw
 ## Create and ingest
 
 ```ts
-import { createKnowledgeBase, hashingEmbedder, recursiveChunker, htmlToText } from "@agent-framework/knowledge";
+import { createKnowledgeBase, hashingEmbedder, recursiveChunker, htmlToText } from "@agent-farmework/knowledge";
 
 const kb = createKnowledgeBase({
   name: "handbook",

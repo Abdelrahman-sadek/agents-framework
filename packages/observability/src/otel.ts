@@ -1,8 +1,8 @@
 import { SpanKind, SpanStatusCode, context, trace, type Attributes, type Meter, type Span, type Tracer } from "@opentelemetry/api";
-import type { AgentEvent, EventSink } from "@agent-framework/core";
+import type { AgentEvent, EventSink } from "@agent-farmework/core";
 
 export interface OpenTelemetrySinkOptions {
-  /** Default: `trace.getTracer("@agent-framework")` (a no-op until an SDK is registered). */
+  /** Default: `trace.getTracer("@agent-farmework")` (a no-op until an SDK is registered). */
   tracer?: Tracer;
   meter?: Meter;
 }
@@ -14,7 +14,7 @@ export interface OpenTelemetrySinkOptions {
  * names, counts, usage and error codes are recorded; message content never is.
  */
 export function openTelemetrySink(options: OpenTelemetrySinkOptions = {}): EventSink {
-  const tracer = options.tracer ?? trace.getTracer("@agent-framework");
+  const tracer = options.tracer ?? trace.getTracer("@agent-farmework");
   const runs = new Map<string, Span>();
   const children = new Map<string, Span>();
   const meter = options.meter;

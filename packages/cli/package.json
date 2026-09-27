@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/cli",
+  "name": "@agent-farmework/cli",
   "version": "0.1.0",
   "description": "Developer CLI (create, dev, test, evaluate, inspect, trace, validate) and declarative agent manifests",
   "license": "Apache-2.0",
@@ -27,19 +27,19 @@
     "agent": "./bin/agent.js"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
-    "@agent-framework/evaluation": "workspace:*",
-    "@agent-framework/observability": "workspace:*",
-    "@agent-framework/production": "workspace:*",
-    "@agent-framework/tools": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
+    "@agent-farmework/evaluation": "workspace:*",
+    "@agent-farmework/observability": "workspace:*",
+    "@agent-farmework/production": "workspace:*",
+    "@agent-farmework/tools": "workspace:*",
     "zod": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

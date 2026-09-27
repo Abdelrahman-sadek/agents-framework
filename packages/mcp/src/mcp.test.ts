@@ -1,6 +1,6 @@
-import { createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { InMemoryAuditLog, ToolRuntime } from "@agent-framework/tools";
+import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { InMemoryAuditLog, ToolRuntime } from "@agent-farmework/tools";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

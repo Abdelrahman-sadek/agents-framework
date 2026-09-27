@@ -1,6 +1,6 @@
-import { InMemoryEventSink, citationVerifier, createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime } from "@agent-framework/tools";
+import { InMemoryEventSink, citationVerifier, createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime } from "@agent-farmework/tools";
 import { describe, expect, test } from "vitest";
 import { fixedSizeChunker, htmlToText, recursiveChunker } from "./chunking.js";
 import { hashingEmbedder } from "./embedding.js";

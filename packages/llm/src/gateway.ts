@@ -1,4 +1,4 @@
-import { FrameworkError, LLMError, sleep, type LLMProvider, type LLMRequest } from "@agent-framework/core";
+import { FrameworkError, LLMError, sleep, type LLMProvider, type LLMRequest } from "@agent-farmework/core";
 
 export interface CircuitBreakerOptions {
   /** Consecutive retryable failures that open the circuit. Default 5. */

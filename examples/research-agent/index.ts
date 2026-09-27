@@ -7,12 +7,12 @@
  *
  *   pnpm example:research
  */
-import { createRuntime, defineAgent, ruleVerifier } from "@agent-framework/core";
-import { createRuleProvider } from "@agent-framework/core/testing";
-import { createKnowledgeBase, hashingEmbedder } from "@agent-framework/knowledge";
-import { models } from "@agent-framework/llm";
-import { defineOrchestrator, defineWorker, llmPlanner } from "@agent-framework/orchestration";
-import { ToolRuntime } from "@agent-framework/tools";
+import { createRuntime, defineAgent, ruleVerifier } from "@agent-farmework/core";
+import { createRuleProvider } from "@agent-farmework/core/testing";
+import { createKnowledgeBase, hashingEmbedder } from "@agent-farmework/knowledge";
+import { models } from "@agent-farmework/llm";
+import { defineOrchestrator, defineWorker, llmPlanner } from "@agent-farmework/orchestration";
+import { ToolRuntime } from "@agent-farmework/tools";
 import { z } from "zod";
 
 const sources = createKnowledgeBase({ name: "papers", embedder: hashingEmbedder() });

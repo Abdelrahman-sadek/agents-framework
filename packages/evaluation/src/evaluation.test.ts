@@ -1,8 +1,8 @@
-import { createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { createKnowledgeBase, hashingEmbedder } from "@agent-framework/knowledge";
-import { piiGuardrail } from "@agent-framework/security";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { createKnowledgeBase, hashingEmbedder } from "@agent-farmework/knowledge";
+import { piiGuardrail } from "@agent-farmework/security";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 import { compareReports, defineDataset, defineEvaluation, evaluators, formatReport, type Observation } from "./evaluation.js";
@@ -117,7 +117,7 @@ describe("agent evaluation", () => {
 
 describe("skill evaluation", () => {
   test("a skill's declared cases become a dataset", async () => {
-    const { defineSkill } = await import("@agent-framework/core");
+    const { defineSkill } = await import("@agent-farmework/core");
     const { skillDataset } = await import("./evaluation.js");
     const skill = defineSkill({ name: "math", description: "Arithmetic", instructions: "Compute.", evaluation: { cases: [{ id: "add", input: "1+1", expected: "2" }] } });
     const report = await defineEvaluation({ name: "skill", dataset: skillDataset(skill), target: async () => ({ output: "2" }), evaluators: [evaluators.contains()] }).run();

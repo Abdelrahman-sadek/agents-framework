@@ -4,7 +4,7 @@
 
 **Build production AI agents in TypeScript: safe tool calling, RAG, memory, multi-agent orchestration, guardrails, human approval, observability and evaluation. Provider-independent.**
 
-[![CI](https://github.com/Abdelrahman-sadek/agents-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdelrahman-sadek/agents-framework/actions/workflows/ci.yml)
+[![CI](https://github.com/agent-farmework/agents-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/agent-farmework/agents-framework/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](./tsconfig.base.json)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.3-339933.svg)](./package.json)
@@ -94,18 +94,18 @@ Requires **Node.js ≥ 20.3** (≥ 22.5 for the SQLite adapters).
 
 ```bash
 # .npmrc in your project. GitHub Packages needs a token with read:packages, even for public packages
-@agent-framework:registry=https://npm.pkg.github.com
+@agent-farmework:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
 ```bash
-npm install @agent-framework/core @agent-framework/tools @agent-framework/llm zod
+npm install @agent-farmework/core @agent-farmework/tools @agent-farmework/llm zod
 ```
 
 **Or run from source** (pnpm 10 via Corepack):
 
 ```bash
-git clone https://github.com/Abdelrahman-sadek/agents-framework.git
+git clone https://github.com/agent-farmework/agents-framework.git
 cd agents-framework
 corepack enable
 pnpm install
@@ -115,10 +115,10 @@ pnpm examples          # runs all six examples offline, no API key needed
 A complete agent with one tool:
 
 ```ts
-import { createRuntime, defineAgent } from "@agent-framework/core";
-import { models } from "@agent-framework/llm";
-import { anthropicProvider } from "@agent-framework/provider-anthropic";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { models } from "@agent-farmework/llm";
+import { anthropicProvider } from "@agent-farmework/provider-anthropic";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 const getWeather = defineTool({
@@ -190,7 +190,7 @@ Next: the [getting started guide](./docs/getting-started.md), or copy an [exampl
 
 ## Packages
 
-All packages live in [`packages/`](./packages) and are published under the `@agent-framework/*` working scope.
+All packages live in [`packages/`](./packages) and are published under the `@agent-farmework/*` working scope.
 
 | Package | What it does | Guide |
 | --- | --- | --- |
@@ -271,7 +271,7 @@ Deep dive: [architecture overview](./docs/architecture/README.md) · [core runti
 <details>
 <summary><b>Which LLMs does it support?</b></summary>
 
-Claude through `@agent-framework/provider-anthropic` (official SDK; Bedrock, Vertex and Foundry clients can be injected). OpenAI, OpenRouter, Gemini's OpenAI-compatible endpoint, Azure OpenAI, vLLM, Ollama, LM Studio and llama.cpp server through `openAICompatibleProvider`. Any other model: implement the small `LLMProvider` interface. See [Models](./docs/models.md).
+Claude through `@agent-farmework/provider-anthropic` (official SDK; Bedrock, Vertex and Foundry clients can be injected). OpenAI, OpenRouter, Gemini's OpenAI-compatible endpoint, Azure OpenAI, vLLM, Ollama, LM Studio and llama.cpp server through `openAICompatibleProvider`. Any other model: implement the small `LLMProvider` interface. See [Models](./docs/models.md).
 </details>
 
 <details>
@@ -301,7 +301,7 @@ The runtime, tools, security and production packages have extensive tests (281 a
 <details>
 <summary><b>Can I run it without an API key or network?</b></summary>
 
-Yes. All examples and tests use deterministic stand-in models (`createScriptedProvider`, `createRuleProvider` from `@agent-framework/core/testing`), and `hashingEmbedder` provides local embeddings.
+Yes. All examples and tests use deterministic stand-in models (`createScriptedProvider`, `createRuleProvider` from `@agent-farmework/core/testing`), and `hashingEmbedder` provides local embeddings.
 </details>
 
 <details>
@@ -337,7 +337,7 @@ Tests use Vitest and import sources directly, so no build step is needed. Detail
 ## Status and roadmap
 
 - ✅ All 14 planned phases, plus streaming, skills, model router, MCP, sandbox, dashboard, pgvector and Redis stores.
-- 📦 Published to GitHub Packages under `@agent-framework/*`.
+- 📦 Published to GitHub Packages under `@agent-farmework/*`.
 - ⏭️ Next: mirror to npmjs.com, a container sandbox runner, a Temporal worker, a native Gemini adapter.
 
 Details: [docs/roadmap.md](./docs/roadmap.md) · [CHANGELOG.md](./CHANGELOG.md).

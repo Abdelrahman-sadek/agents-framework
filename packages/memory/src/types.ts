@@ -1,4 +1,4 @@
-import type { Principal } from "@agent-framework/core";
+import type { Principal } from "@agent-farmework/core";
 
 export type MemoryKind = "conversation" | "user" | "entity" | "episodic" | "semantic";
 

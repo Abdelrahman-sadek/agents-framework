@@ -1,5 +1,5 @@
 /**
- * @agent-framework/cli — the `agent` command and declarative manifests.
+ * @agent-farmework/cli — the `agent` command and declarative manifests.
  */
 export { runCli } from "./cli.js";
 export type { CliIO } from "./cli.js";

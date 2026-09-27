@@ -1,6 +1,6 @@
 # Reflection and verification
 
-`Generate → Verify → Correct`, in `@agent-framework/core`.
+`Generate → Verify → Correct`, in `@agent-farmework/core`.
 
 Reflection is opt-in because each correction costs a model call. It is bounded by `limits.maxReflectionAttempts` (default 1).
 
@@ -13,7 +13,7 @@ defineAgent({
       citationVerifier({ minCitations: 1 }),    // source verification
       ruleVerifier("no-guarantees", ({ text }) => (/guarantee/i.test(text) ? "Do not promise guarantees." : true)),
       llmCritic({ provider: anthropic, modelId: "claude-opus-5", rubric: "Every claim is supported by the sources." }),
-      agentVerifier(reviewerAgent),             // cross-agent verification (@agent-framework/orchestration)
+      agentVerifier(reviewerAgent),             // cross-agent verification (@agent-farmework/orchestration)
     ],
   },
   limits: { maxOutputCorrections: 1, maxReflectionAttempts: 2 },

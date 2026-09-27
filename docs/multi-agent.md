@@ -1,6 +1,6 @@
 # Multi-agent systems
 
-`@agent-framework/orchestration`
+`@agent-farmework/orchestration`
 
 Multi-agent is optional. Start with **one agent and good tools**, then add an orchestrator when the work splits into independent, verifiable steps. Use agent-to-agent delegation only when a specialist needs its own model, tools or permissions.
 

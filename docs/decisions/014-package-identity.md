@@ -8,7 +8,7 @@ The framework needs a package identity that supports a scoped namespace and avoi
 
 **Decision**
 
-For Phase 0 work, use the internal repository name **enterprise-agent-framework** and package names under an internal scoping convention such as `@agent-framework/*`.
+For Phase 0 work, use the internal repository name **enterprise-agent-framework** and package names under an internal scoping convention such as `@agent-farmework/*`.
 
 This is a temporary working identity for the repository and package graphs. It is not a claim of npm availability.
 
@@ -28,7 +28,7 @@ Best-effort checks indicate that generic scoped names in the AI-agent space are 
 
 **Current recommendation**
 
-- Keep `@agent-framework/*` as the working internal convention until publication.
+- Keep `@agent-farmework/*` as the working internal convention until publication.
 - Before release, perform explicit availability checks and decide between:
   - a scoped namespace owned by the project/organization, if available
   - a different unique namespace if the obvious one is taken
@@ -45,4 +45,4 @@ npm publication naming is unresolved until availability is verified. This does n
 
 ## Update (publication)
 
-The packages are published as `@agent-framework/*` to **GitHub Packages**, under the GitHub organization that owns the repository (the scope must match the organization name). npmjs.com publication is deferred until an npm account is available. The same names are kept, so moving later only changes the registry.
+The packages are published as `@agent-farmework/*` to **GitHub Packages**, under the `agent-farmework` GitHub organization that owns the repository (GitHub Packages requires the scope to match the organization's account name, so the scope follows the organization's spelling). npmjs.com publication is deferred until an npm account is available. The same names are kept, so moving later only changes the registry.

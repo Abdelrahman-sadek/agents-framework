@@ -1,4 +1,4 @@
-import type { Guardrail, GuardrailStage } from "@agent-framework/core";
+import type { Guardrail, GuardrailStage } from "@agent-farmework/core";
 
 // ------------------------------------------------------------------ PII
 

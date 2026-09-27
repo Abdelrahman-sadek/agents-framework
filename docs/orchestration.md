@@ -1,6 +1,6 @@
 # Orchestration
 
-`@agent-framework/orchestration`
+`@agent-farmework/orchestration`
 
 ```
                 Orchestrator

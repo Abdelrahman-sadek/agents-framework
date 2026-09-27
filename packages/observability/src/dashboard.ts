@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import type { AgentEvent } from "@agent-framework/core";
+import type { AgentEvent } from "@agent-farmework/core";
 import { inspectRun, type RunReport } from "./inspect.js";
 
 export interface DashboardOptions {

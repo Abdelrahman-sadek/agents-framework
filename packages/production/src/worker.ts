@@ -1,4 +1,4 @@
-import { FrameworkError, randomIds, type Agent, type AgentRuntime, type IdGenerator } from "@agent-framework/core";
+import { FrameworkError, randomIds, type Agent, type AgentRuntime, type IdGenerator } from "@agent-farmework/core";
 import type { Job, JobQueue } from "./queue.js";
 
 export interface AgentWorkerOptions {

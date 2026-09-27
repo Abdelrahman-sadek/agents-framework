@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/provider-anthropic",
+  "name": "@agent-farmework/provider-anthropic",
   "version": "0.1.0",
   "description": "Anthropic Claude adapter for the framework LLMProvider contract (official @anthropic-ai/sdk)",
   "license": "Apache-2.0",
@@ -23,15 +23,15 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
     "@anthropic-ai/sdk": "^0.128.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/provider-anthropic"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"

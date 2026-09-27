@@ -35,19 +35,19 @@ importers:
 
   packages/cli:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/evaluation':
+      '@agent-farmework/evaluation':
         specifier: workspace:*
         version: link:../evaluation
-      '@agent-framework/observability':
+      '@agent-farmework/observability':
         specifier: workspace:*
         version: link:../observability
-      '@agent-framework/production':
+      '@agent-farmework/production':
         specifier: workspace:*
         version: link:../production
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -56,7 +56,7 @@ importers:
 
   packages/context:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
 
@@ -64,26 +64,26 @@ importers:
 
   packages/evaluation:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@agent-framework/knowledge':
+      '@agent-farmework/knowledge':
         specifier: workspace:*
         version: link:../knowledge
-      '@agent-framework/security':
+      '@agent-farmework/security':
         specifier: workspace:*
         version: link:../security
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
 
   packages/knowledge:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -92,16 +92,16 @@ importers:
 
   packages/llm:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
 
   packages/mcp:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       '@modelcontextprotocol/sdk':
@@ -113,23 +113,23 @@ importers:
 
   packages/memory:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
         specifier: ^4.1.0
         version: 4.6.5
     devDependencies:
-      '@agent-framework/knowledge':
+      '@agent-farmework/knowledge':
         specifier: workspace:*
         version: link:../knowledge
 
   packages/observability:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
       '@opentelemetry/api':
@@ -138,10 +138,10 @@ importers:
 
   packages/orchestration:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -150,16 +150,16 @@ importers:
 
   packages/production:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/knowledge':
+      '@agent-farmework/knowledge':
         specifier: workspace:*
         version: link:../knowledge
-      '@agent-framework/memory':
+      '@agent-farmework/memory':
         specifier: workspace:*
         version: link:../memory
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -168,7 +168,7 @@ importers:
 
   packages/provider-anthropic:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
       '@anthropic-ai/sdk':
@@ -177,10 +177,10 @@ importers:
 
   packages/sandbox:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -189,10 +189,10 @@ importers:
 
   packages/security:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-framework/tools':
+      '@agent-farmework/tools':
         specifier: workspace:*
         version: link:../tools
       zod:
@@ -201,7 +201,7 @@ importers:
 
   packages/tools:
     dependencies:
-      '@agent-framework/core':
+      '@agent-farmework/core':
         specifier: workspace:*
         version: link:../core
       zod:

@@ -5,16 +5,16 @@
  *
  *   pnpm example:enterprise
  */
-import { citationVerifier, createRuntime, defineAgent, ruleVerifier, type Principal } from "@agent-framework/core";
-import { createRuleProvider } from "@agent-framework/core/testing";
-import { defineDataset, defineEvaluation, evaluators, formatReport } from "@agent-framework/evaluation";
-import { createKnowledgeBase, hashingEmbedder } from "@agent-framework/knowledge";
-import { models } from "@agent-framework/llm";
-import { createMemory } from "@agent-framework/memory";
-import { CostTracker, formatRunReport, inspectRun } from "@agent-framework/observability";
-import { defineOrchestrator, defineWorker, staticPlanner } from "@agent-framework/orchestration";
-import { piiGuardrail, promptInjectionGuardrail, rbacPolicy, secretLeakGuardrail, tenantIsolationPolicy } from "@agent-framework/security";
-import { InMemoryAuditLog, ToolRuntime, allOf, defineTool } from "@agent-framework/tools";
+import { citationVerifier, createRuntime, defineAgent, ruleVerifier, type Principal } from "@agent-farmework/core";
+import { createRuleProvider } from "@agent-farmework/core/testing";
+import { defineDataset, defineEvaluation, evaluators, formatReport } from "@agent-farmework/evaluation";
+import { createKnowledgeBase, hashingEmbedder } from "@agent-farmework/knowledge";
+import { models } from "@agent-farmework/llm";
+import { createMemory } from "@agent-farmework/memory";
+import { CostTracker, formatRunReport, inspectRun } from "@agent-farmework/observability";
+import { defineOrchestrator, defineWorker, staticPlanner } from "@agent-farmework/orchestration";
+import { piiGuardrail, promptInjectionGuardrail, rbacPolicy, secretLeakGuardrail, tenantIsolationPolicy } from "@agent-farmework/security";
+import { InMemoryAuditLog, ToolRuntime, allOf, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 // ---------------------------------------------------------------- data & knowledge

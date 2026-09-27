@@ -1,5 +1,5 @@
-import { KnowledgeError, type ContextItem, type ContextProvider, type EmbeddingProvider } from "@agent-framework/core";
-import { defineTool, type Tool } from "@agent-framework/tools";
+import { KnowledgeError, type ContextItem, type ContextProvider, type EmbeddingProvider } from "@agent-farmework/core";
+import { defineTool, type Tool } from "@agent-farmework/tools";
 import { z } from "zod";
 import { recursiveChunker, type Chunker } from "./chunking.js";
 import { InMemoryVectorStore, bm25, type VectorStore } from "./stores.js";

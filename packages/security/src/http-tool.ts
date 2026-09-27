@@ -1,5 +1,5 @@
-import { ToolError } from "@agent-framework/core";
-import { defineTool, type Tool, type ToolConfig } from "@agent-framework/tools";
+import { ToolError } from "@agent-farmework/core";
+import { defineTool, type Tool, type ToolConfig } from "@agent-farmework/tools";
 import type { z } from "zod";
 import { safeFetch, type EgressPolicy } from "./egress.js";
 import type { SecretProvider } from "./secrets.js";
