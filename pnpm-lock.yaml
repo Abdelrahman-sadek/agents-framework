@@ -35,7 +35,11 @@ importers:
 
   packages/cli: {}
 
-  packages/context: {}
+  packages/context:
+    dependencies:
+      '@agent-framework/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/core: {}
 

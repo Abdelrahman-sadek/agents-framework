@@ -11,5 +11,9 @@
   "exclude": [
     "src/**/*.test.ts"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../core"
+    }
+  ]
 }
