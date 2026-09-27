@@ -134,3 +134,25 @@ describe("logs and redaction", () => {
     expect(readEventFile(path, "other")).toHaveLength(0);
   });
 });
+
+describe("dashboard", () => {
+  test("serves run summaries and details over HTTP, bound to localhost", async () => {
+    const { createDashboardServer } = await import("./dashboard.js");
+    const { events } = await runAgent();
+    const dashboard = await createDashboardServer({ events: () => events });
+    try {
+      expect(dashboard.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      const runs = (await (await fetch(`${dashboard.url}/api/runs`)).json()) as { runId: string; status: string }[];
+      expect(runs[0]).toMatchObject({ status: "COMPLETED" });
+      const detail = (await (await fetch(`${dashboard.url}/api/runs/${runs[0]!.runId}`)).json()) as { timeline: unknown[] };
+      expect(detail.timeline.length).toBe(events.length);
+      const page = await fetch(dashboard.url);
+      expect(page.headers.get("content-type")).toContain("text/html");
+      expect(await page.text()).not.toContain("innerHTML");
+      expect((await fetch(`${dashboard.url}/api/runs/nope`)).status).toBe(404);
+      expect((await fetch(`${dashboard.url}/api/runs`, { method: "POST" })).status).toBe(405);
+    } finally {
+      await dashboard.close();
+    }
+  });
+});

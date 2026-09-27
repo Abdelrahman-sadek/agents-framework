@@ -19,12 +19,22 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --root ../.. --project mcp"
+    "test": "vitest run --root ../.. --project mcp",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@agent-framework/core": "workspace:*",
     "@agent-framework/tools": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "publishConfig": {
+    "access": "public"
   }
 }

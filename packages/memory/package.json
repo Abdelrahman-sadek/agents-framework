@@ -19,7 +19,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --root ../.. --project memory"
+    "test": "vitest run --root ../.. --project memory",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@agent-framework/core": "workspace:*",
@@ -28,5 +29,14 @@
   },
   "devDependencies": {
     "@agent-framework/knowledge": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "directory": "packages/memory"
+  },
+  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "publishConfig": {
+    "access": "public"
   }
 }

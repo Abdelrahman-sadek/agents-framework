@@ -9,3 +9,5 @@ export { CostTracker } from "./cost.js";
 export type { CostLine, CostReport } from "./cost.js";
 export { formatRunReport, inspectRun } from "./inspect.js";
 export type { RunReport } from "./inspect.js";
+export { createDashboardServer, summarizeRuns } from "./dashboard.js";
+export type { Dashboard, DashboardOptions } from "./dashboard.js";

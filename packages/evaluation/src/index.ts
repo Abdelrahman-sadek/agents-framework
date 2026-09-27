@@ -1,7 +1,7 @@
 /**
  * @agent-framework/evaluation — datasets, evaluators, reports and regression checks.
  */
-export { compareReports, defineDataset, defineEvaluation, evaluators, formatReport } from "./evaluation.js";
+export { compareReports, defineDataset, skillDataset, defineEvaluation, evaluators, formatReport } from "./evaluation.js";
 export type {
   CaseResult,
   Dataset,

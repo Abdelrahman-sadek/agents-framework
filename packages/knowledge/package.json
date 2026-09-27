@@ -19,11 +19,21 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --root ../.. --project knowledge"
+    "test": "vitest run --root ../.. --project knowledge",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@agent-framework/core": "workspace:*",
     "@agent-framework/tools": "workspace:*",
     "zod": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "directory": "packages/knowledge"
+  },
+  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "publishConfig": {
+    "access": "public"
   }
 }

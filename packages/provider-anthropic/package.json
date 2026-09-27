@@ -19,10 +19,20 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --root ../.. --project provider-anthropic"
+    "test": "vitest run --root ../.. --project provider-anthropic",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@agent-framework/core": "workspace:*",
     "@anthropic-ai/sdk": "^0.128.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "directory": "packages/provider-anthropic"
+  },
+  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "publishConfig": {
+    "access": "public"
   }
 }

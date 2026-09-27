@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { Agent } from "@agent-framework/core";
 import { compareReports, formatReport, type Evaluation, type EvaluationReport } from "@agent-framework/evaluation";
-import { formatRunReport, inspectRun, readEventFile } from "@agent-framework/observability";
+import { createDashboardServer, formatRunReport, inspectRun, readEventFile } from "@agent-framework/observability";
 import { SqliteRunStateStore, openSqlite } from "@agent-framework/production";
 import { checkManifest, parseManifest, type ManifestRegistry } from "./manifest.js";
 import { scaffold } from "./templates.js";
@@ -19,6 +19,8 @@ export interface CliIO {
   load?: (path: string) => Promise<Record<string, unknown>>;
   /** Read lines for `agent dev` (default: stdin). */
   lines?: () => AsyncIterable<string>;
+  /** Resolves when a long-running command (dashboard) should stop (default: Ctrl-C). */
+  waitForExit?: () => Promise<void>;
   /** Run a command (default: spawn with inherited stdio). */
   exec?: (command: string, args: string[]) => Promise<number>;
 }
@@ -33,6 +35,8 @@ Usage:
                                              Run an evaluation (module exports \`evaluation\`)
   agent inspect <run-id> --db <sqlite file>  Show persisted run state
   agent trace <run-id> --events <file.jsonl> Show a run timeline from recorded events
+  agent dashboard --events <file.jsonl> [--port 4319]
+                                             Browse runs in a local web UI
   agent validate <manifest.json> [--registry <module>]
                                              Validate an agent manifest
   agent help
@@ -143,6 +147,17 @@ export async function runCli(argv: readonly string[], ioOverrides: Partial<CliIO
         const events = readEventFile(resolve(io.cwd, values.events), positionals[0]);
         if (events.length === 0) throw new Error(`No events for run '${positionals[0]}'`);
         io.out(`${formatRunReport(inspectRun(events))}\n`);
+        return 0;
+      }
+
+      case "dashboard": {
+        const { values } = parseArgs({ args: rest, options: { events: { type: "string" }, port: { type: "string", default: "4319" } } });
+        if (values.events === undefined) throw new Error("Usage: agent dashboard --events <file.jsonl> [--port 4319]");
+        const file = resolve(io.cwd, values.events);
+        const dashboard = await createDashboardServer({ events: () => readEventFile(file), port: Number(values.port) });
+        io.out(`Dashboard: ${dashboard.url} (Ctrl-C to stop)\n`);
+        await (io.waitForExit ?? (() => new Promise<void>((r) => process.once("SIGINT", () => r()))))();
+        await dashboard.close();
         return 0;
       }
 
