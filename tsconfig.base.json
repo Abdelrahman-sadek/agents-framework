@@ -3,7 +3,9 @@
     "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2023", "DOM"],
+    "lib": [
+      "ES2023"
+    ],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -17,14 +19,18 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "outDir": "dist",
-    "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "skipLibCheck": true,
     "composite": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "types": [
+      "node"
+    ]
   },
-  "exclude": ["dist", "node_modules", ".tsbuildinfo"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    ".tsbuildinfo"
+  ]
 }

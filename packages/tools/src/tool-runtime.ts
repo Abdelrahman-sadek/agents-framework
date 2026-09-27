@@ -1,306 +1,479 @@
-import { BaseFrameworkError, ToolError, ToolAuthorizationError } from "@agent-framework/core";
-import { Tool, ToolExecutionContext, ToolCallRequest, ToolAuthorizationContext, ToolAuthorizationResult, ToolResult, ToolObservation, ToolAuditEntry, ValidatedToolInput, ToolRetryConfig, PolicyEngine, AuditStore, ObservationEmitter, IdempotencyStore } from "./tool-definition.js";
+import { createHash } from "node:crypto";
+import {
+  ApprovalExpiredError,
+  ApprovalRejectedError,
+  CancellationError,
+  FrameworkError,
+  RateLimitError,
+  ToolAuthorizationError,
+  ToolError,
+  ToolTimeoutError,
+  ValidationError,
+  noopEmit,
+  raceAbort,
+  randomIds,
+  sleep,
+  systemClock,
+  type AgentIdentity,
+  type ApprovalDecision,
+  type ApprovalRequest,
+  type Clock,
+  type EmitFn,
+  type EventCorrelation,
+  type IdGenerator,
+  type Principal,
+  type SerializedError,
+  type ToolInvocation,
+  type ToolInvocationResult,
+  type ToolInvoker,
+} from "@agent-framework/core";
+import { z } from "zod";
+import { permissionPolicy, type ToolAuthorizationDecision, type ToolPolicy } from "./policy.js";
+import {
+  InMemoryAuditLog,
+  InMemoryIdempotencyStore,
+  InMemoryRateLimiter,
+  Semaphore,
+  type AuditSink,
+  type IdempotencyStore,
+  type RateLimiter,
+  type ToolAuditRecord,
+} from "./stores.js";
+import { isTool, type AnyTool, type Tool, type ToolConfig, type ToolContext } from "./tool.js";
 
-export class DefaultPolicyEngine implements PolicyEngine {
-  async authorize(context: ToolAuthorizationContext): Promise<ToolAuthorizationResult> {
-    const tool = context.toolName;
-    const permissions = context.permissions ?? context.metadata?.permissions;
-
-    if (!permissions) {
-      return { allowed: true, authorizedBy: "default-policy", permissionScope: [] };
-    }
-
-    if (permissions.denied && permissions.denied.includes(tool)) {
-      return { allowed: false, reason: `Tool '${tool}' is denied by policy`, authorizedBy: "default-policy" };
-    }
-
-    if (!permissions.allowed || !permissions.allowed.includes(tool)) {
-      return { allowed: false, reason: `Tool '${tool}' is not in allowed list`, authorizedBy: "default-policy" };
-    }
-
-    return { allowed: true, authorizedBy: "default-policy", permissionScope: permissions.dataScope };
-  }
+export interface ToolRuntimeOptions {
+  /** Deterministic authorization. Default: `permissionPolicy()`. */
+  policy?: ToolPolicy;
+  /** Default: bounded in-memory audit log (see `ToolRuntime.audit`). */
+  audit?: AuditSink;
+  idempotency?: IdempotencyStore;
+  rateLimiter?: RateLimiter;
+  /** Per-attempt timeout for tools that do not set one. Default 30 000 ms. */
+  defaultTimeoutMs?: number;
+  clock?: Clock;
+  ids?: IdGenerator;
+  /** Called when the audit sink throws. */
+  onAuditError?: (error: unknown, record: ToolAuditRecord) => void;
 }
 
-export class InMemoryAuditStore implements AuditStore {
-  private entries: ToolAuditEntry[] = [];
-  async record(entry: ToolAuditEntry): Promise<void> {
-    this.entries.push(entry);
-  }
-  getEntries(): ToolAuditEntry[] {
-    return this.entries;
-  }
+export interface ExecuteToolOptions {
+  agent: AgentIdentity;
+  user?: Principal;
+  runId?: string;
+  toolCallId?: string;
+  signal?: AbortSignal;
+  emit?: EmitFn;
+  approval?: { request: ApprovalRequest; decision: ApprovalDecision };
 }
 
-export class InMemoryObservationEmitter implements ObservationEmitter {
-  private observations: ToolObservation[] = [];
-  async emit(observation: ToolObservation): Promise<void> {
-    this.observations.push(observation);
-  }
-  getObservations(): ToolObservation[] {
-    return this.observations;
-  }
+export type ToolExecutionResult<TOutput> = Omit<ToolInvocationResult, "output"> & { output?: TOutput };
+
+type AttemptOutcome = { ok: true; output: unknown } | { ok: false; error: FrameworkError; timedOut: boolean; detail?: string };
+
+interface Outcome {
+  status: ToolInvocationResult["status"];
+  output?: unknown;
+  error?: FrameworkError;
+  errorDetail?: string;
+  approval?: ApprovalRequest;
+  attempts?: number;
+  cached?: boolean;
 }
 
-export class InMemoryIdempotencyStore implements IdempotencyStore {
-  private store = new Map<string, { result: ToolResult<unknown>; expiresAt?: number }>();
-  async check(key: string): Promise<{ exists: boolean; result?: ToolResult<unknown> }> {
-    const entry = this.store.get(key);
-    if (!entry) return { exists: false };
-    if (entry.expiresAt && Date.now() > entry.expiresAt) {
-      this.store.delete(key);
-      return { exists: false };
+/**
+ * The only path from a model's tool request to `execute`:
+ *
+ *   parse → validate input → authorize → approval → rate limit →
+ *   idempotency → concurrency → execute (timeout, retry) → validate output → audit
+ *
+ * `invoke` never throws for tool-level problems; it returns a normalized result.
+ */
+export class ToolRuntime implements ToolInvoker {
+  readonly audit: AuditSink;
+  private readonly policy: ToolPolicy;
+  private readonly idempotency: IdempotencyStore;
+  private readonly rateLimiter: RateLimiter;
+  private readonly clock: Clock;
+  private readonly ids: IdGenerator;
+  private readonly semaphores = new Map<string, Semaphore>();
+  private readonly inFlight = new Map<string, Promise<AttemptOutcome>>();
+
+  constructor(private readonly options: ToolRuntimeOptions = {}) {
+    this.policy = options.policy ?? permissionPolicy();
+    this.audit = options.audit ?? new InMemoryAuditLog();
+    this.clock = options.clock ?? systemClock;
+    this.ids = options.ids ?? randomIds;
+    const now = (): number => this.clock.now().getTime();
+    this.idempotency = options.idempotency ?? new InMemoryIdempotencyStore(now);
+    this.rateLimiter = options.rateLimiter ?? new InMemoryRateLimiter(now);
+  }
+
+  /** Execute a tool directly from application code, through the same pipeline a model uses. */
+  async execute<TInput, TOutput>(tool: Tool<TInput, TOutput>, input: unknown, options: ExecuteToolOptions): Promise<ToolExecutionResult<TOutput>> {
+    const result = await this.invoke({
+      tool,
+      toolCallId: options.toolCallId ?? this.ids.next("tool"),
+      rawArguments: input,
+      runId: options.runId ?? "direct",
+      identity: { agent: options.agent, ...(options.user === undefined ? {} : { user: options.user }) },
+      signal: options.signal ?? new AbortController().signal,
+      emit: options.emit ?? noopEmit,
+      ...(options.approval === undefined ? {} : { approval: options.approval }),
+    });
+    return result as ToolExecutionResult<TOutput>;
+  }
+
+  async invoke(invocation: ToolInvocation): Promise<ToolInvocationResult> {
+    const startedAt = Date.now();
+    const audit: Partial<ToolAuditRecord> = {};
+    let outcome: Outcome;
+    try {
+      outcome = await this.pipeline(invocation, audit);
+    } catch (error) {
+      const cancelled = invocation.signal.aborted;
+      outcome = {
+        status: "error",
+        error: cancelled
+          ? FrameworkError.from(invocation.signal.reason, (m) => new CancellationError(m))
+          : FrameworkError.from(error, (_m, cause) => new ToolError("Tool invocation failed unexpectedly", { cause })),
+      };
     }
-    return { exists: true, result: entry.result };
-  }
-  async set(key: string, result: ToolResult<unknown>, ttlMs?: number): Promise<void> {
-    this.store.set(key, { result, expiresAt: ttlMs ? Date.now() + ttlMs : undefined });
-  }
-}
 
-export class ToolRuntime {
-  constructor(
-    public readonly policyEngine: PolicyEngine = new DefaultPolicyEngine(),
-    public readonly auditStore: AuditStore = new InMemoryAuditStore(),
-    public readonly observationEmitter: ObservationEmitter = new InMemoryObservationEmitter(),
-    public readonly idempotencyStore: IdempotencyStore = new InMemoryIdempotencyStore(),
-  ) {}
+    const serialized = outcome.error === undefined ? undefined : this.serialize(outcome.error, invocation);
+    const result: ToolInvocationResult = {
+      status: outcome.status,
+      attempts: outcome.attempts ?? 0,
+      durationMs: Date.now() - startedAt,
+      cached: outcome.cached ?? false,
+      ...(outcome.status === "success" ? { output: outcome.output } : {}),
+      ...(serialized === undefined ? {} : { error: serialized }),
+      ...(outcome.approval === undefined ? {} : { approval: outcome.approval }),
+    };
+    await this.recordAudit(invocation, result, audit, outcome.errorDetail);
+    return result;
+  }
 
-  async execute<TInput, TOutput>(
-    request: ToolCallRequest<TInput>,
-    runConfig?: { signal?: AbortSignal; toolCallId?: string },
-  ): Promise<ToolResult<TOutput>> {
-    const toolCallId = runConfig?.toolCallId ?? crypto.randomUUID();
-    const context: ToolExecutionContext = {
-      runId: request.runId,
-      agentId: request.agentId,
-      userId: request.userId,
-      tenantId: request.tenantId,
-      organizationId: request.organizationId,
-      toolCallId,
-      stepId: request.stepId,
-      metadata: request.tool.metadata,
-      signal: runConfig?.signal ?? request.tool.metadata?.signal,
+  // ------------------------------------------------------------------ pipeline
+
+  private async pipeline(inv: ToolInvocation, audit: Partial<ToolAuditRecord>): Promise<Outcome> {
+    const correlation: EventCorrelation = {
+      toolCallId: inv.toolCallId,
+      ...(inv.stepId === undefined ? {} : { stepId: inv.stepId }),
+      ...(inv.llmCallId === undefined ? {} : { llmCallId: inv.llmCallId }),
+    };
+    const emit: EmitFn = (type, payload, extra) => inv.emit(type, payload, extra ?? correlation);
+    const toolName = inv.tool.name;
+    const ids = { toolCallId: inv.toolCallId, toolName };
+
+    // 1. Only tools built with defineTool() can execute. A hand-made object cannot smuggle in an execute function.
+    if (!isTool(inv.tool)) {
+      const decision = { allowed: false, policy: "tool-runtime", reason: "Not a framework tool (use defineTool)" };
+      audit.authorization = decision;
+      inv.emit("TOOL_AUTHORIZATION_COMPLETED", { ...ids, ...decision }, correlation);
+      return { status: "denied", error: new ToolAuthorizationError("Tool call was not authorized") };
+    }
+    const tool: AnyTool = inv.tool;
+    const def = tool.definition as ToolConfig<unknown, unknown>;
+
+    // 2. Parse and validate model-generated arguments. Invalid arguments never execute.
+    let raw: unknown = inv.rawArguments;
+    if (typeof raw === "string") {
+      try {
+        raw = raw.trim() === "" ? {} : JSON.parse(raw);
+      } catch {
+        return { status: "error", error: new ValidationError(`Arguments for tool '${toolName}' are not valid JSON`) };
+      }
+    }
+    const parsed = def.input.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        status: "error",
+        error: new ValidationError(`Invalid arguments for tool '${toolName}': ${z.prettifyError(parsed.error)}`),
+      };
+    }
+    const input = parsed.data;
+    audit.input = def.sensitive === true ? "[REDACTED]" : input;
+    const user = inv.identity.user;
+
+    // 3. Deterministic authorization: agent identity + user identity + tenant + tool permissions.
+    inv.emit("TOOL_AUTHORIZATION_STARTED", ids, correlation);
+    let decision: ToolAuthorizationDecision;
+    try {
+      decision = await this.policy.authorize({
+        tool: { name: toolName, version: tool.version, kind: tool.kind, permissions: def.permissions ?? [], metadata: def.metadata ?? {} },
+        input,
+        agent: inv.identity.agent,
+        ...(user === undefined ? {} : { user }),
+        runId: inv.runId,
+        toolCallId: inv.toolCallId,
+      });
+    } catch (error) {
+      decision = { allowed: false, policy: this.policy.name, reason: `Policy evaluation failed: ${String(error)}` };
+    }
+    decision = { allowed: decision.allowed === true, policy: decision.policy, reason: decision.reason };
+    audit.authorization = decision;
+    inv.emit("TOOL_AUTHORIZATION_COMPLETED", { ...ids, ...decision }, correlation);
+    if (!decision.allowed) {
+      return { status: "denied", error: new ToolAuthorizationError("Tool call was not authorized") };
+    }
+
+    // 4. Human approval. Approval is bound to the tool call and the exact validated arguments.
+    const argumentsHash = hashArguments(input);
+    if (inv.approval !== undefined) {
+      const { request, decision: human } = inv.approval;
+      const bound =
+        request.toolCallId === inv.toolCallId &&
+        request.toolName === toolName &&
+        request.argumentsHash === argumentsHash &&
+        human.approvalId === request.approvalId;
+      if (!bound) {
+        return {
+          status: "denied",
+          error: new ToolAuthorizationError("Approval does not match this tool call", { metadata: { reason: "APPROVAL_MISMATCH" } }),
+        };
+      }
+      if (request.expiresAt !== undefined && this.clock.now().getTime() > Date.parse(request.expiresAt)) {
+        return { status: "denied", error: new ApprovalExpiredError(`Approval '${request.approvalId}' has expired`) };
+      }
+      const decidedBy = human.decidedBy === undefined ? {} : { decidedBy: human.decidedBy };
+      if (human.decision === "rejected") {
+        audit.approval = { approvalId: request.approvalId, decision: "rejected", ...decidedBy };
+        inv.emit("TOOL_APPROVAL_REJECTED", { ...ids, approvalId: request.approvalId, ...decidedBy, ...(human.reason === undefined ? {} : { reason: human.reason }) }, correlation);
+        return {
+          status: "rejected",
+          error: new ApprovalRejectedError(`The reviewer rejected this action${human.reason === undefined ? "" : `: ${human.reason}`}`),
+        };
+      }
+      audit.approval = { approvalId: request.approvalId, decision: "approved", ...decidedBy };
+      inv.emit("TOOL_APPROVAL_GRANTED", { ...ids, approvalId: request.approvalId, ...decidedBy }, correlation);
+    } else if (this.approvalRequired(def, input, user)) {
+      const now = this.clock.now();
+      const approval: ApprovalRequest = {
+        approvalId: this.ids.next("approval"),
+        toolCallId: inv.toolCallId,
+        toolName,
+        argumentsHash,
+        requestedAt: now.toISOString(),
+        ...(def.approval?.expiresInMs === undefined ? {} : { expiresAt: new Date(now.getTime() + def.approval.expiresInMs).toISOString() }),
+        ...(def.approval?.reason === undefined ? {} : { reason: def.approval.reason }),
+      };
+      audit.approval = { approvalId: approval.approvalId, decision: "requested" };
+      inv.emit(
+        "TOOL_APPROVAL_REQUIRED",
+        { ...ids, approvalId: approval.approvalId, ...(approval.expiresAt === undefined ? {} : { expiresAt: approval.expiresAt }) },
+        correlation,
+      );
+      return { status: "approval_required", approval };
+    }
+
+    // 5. Rate limiting (not executed when exceeded).
+    if (def.rateLimit !== undefined) {
+      const scope = def.rateLimit.scope ?? "global";
+      const bucket = scope === "tenant" ? (user?.tenantId ?? "-") : scope === "user" ? (user?.userId ?? "-") : "*";
+      const ok = await this.rateLimiter.tryAcquire(`${toolName}:${scope}:${bucket}`, def.rateLimit.maxCalls, def.rateLimit.windowMs);
+      if (!ok) return { status: "error", error: new RateLimitError(`Rate limit exceeded for tool '${toolName}'`) };
+    }
+
+    // 6. Idempotency: a stored success is returned instead of executing again.
+    let idempotencyKey: string | undefined;
+    if (def.idempotency !== undefined) {
+      idempotencyKey = `${toolName}:${user?.tenantId ?? "-"}:${def.idempotency.key(input, { runId: inv.runId, ...(user === undefined ? {} : { user }) })}`;
+      const stored = await this.idempotency.get(idempotencyKey);
+      if (stored !== undefined) {
+        emit("TOOL_EXECUTION_COMPLETED", { ...ids, attempts: 0, durationMs: 0, cached: true });
+        return { status: "success", output: stored.output, cached: true };
+      }
+      const running = this.inFlight.get(idempotencyKey);
+      if (running !== undefined) {
+        const shared = await running;
+        if (shared.ok) {
+          emit("TOOL_EXECUTION_COMPLETED", { ...ids, attempts: 0, durationMs: 0, cached: true });
+          return { status: "success", output: shared.output, cached: true };
+        }
+      }
+    }
+
+    // 7–9. Concurrency, execution with timeout and retry, output validation.
+    let attempts = 0;
+    const run = async (): Promise<AttemptOutcome> => {
+      const release = def.concurrency === undefined ? undefined : await this.semaphore(toolName, def.concurrency).acquire(inv.signal);
+      try {
+        const retry = def.retry;
+        const maxAttempts = retry?.maxAttempts ?? 1;
+        const timeoutMs = def.timeoutMs ?? this.options.defaultTimeoutMs ?? 30_000;
+        for (;;) {
+          attempts += 1;
+          emit("TOOL_EXECUTION_STARTED", { ...ids, attempt: attempts });
+          const outcome = await this.attempt(def, input, inv, attempts, timeoutMs);
+          if (outcome.ok) return outcome;
+          const retryable = outcome.error.retryable || (outcome.timedOut && retry?.retryOnTimeout === true);
+          const willRetry = retryable && attempts < maxAttempts;
+          if (outcome.timedOut) {
+            emit("TOOL_EXECUTION_TIMED_OUT", { ...ids, attempt: attempts, willRetry, timeoutMs });
+          } else {
+            emit("TOOL_EXECUTION_FAILED", { ...ids, attempt: attempts, willRetry, error: this.serialize(outcome.error, inv) });
+          }
+          if (!willRetry) return outcome;
+          const initial = retry?.initialDelayMs ?? 100;
+          const delay = retry?.backoff === "exponential" ? initial * 2 ** (attempts - 1) : initial;
+          await sleep(Math.min(delay, retry?.maxDelayMs ?? 10_000), inv.signal);
+        }
+      } finally {
+        release?.();
+      }
     };
 
     const startedAt = Date.now();
-    const observation: ToolObservation = {
-      toolCallId,
-      runId: request.runId,
-      agentId: request.agentId,
-      toolName: request.tool.name,
-      toolVersion: request.tool.version,
-      input: request.input,
-      status: "PENDING",
-      startedAt: new Date().toISOString(),
-    };
-
+    const pending = run();
+    if (idempotencyKey !== undefined) this.inFlight.set(idempotencyKey, pending);
+    let outcome: AttemptOutcome;
     try {
-      const validatedInput = validateInput(request.tool, request.input);
-      if (!validatedInput.ok) {
-        observation.status = "FAILED";
-        observation.completedAt = new Date().toISOString();
-        observation.error = validatedInput.error;
-        await this.emitObservation(observation);
-        await this.audit(observation, false, validatedInput.error.message);
-        return { ok: false, error: validatedInput.error };
-      }
+      outcome = await pending;
+    } finally {
+      if (idempotencyKey !== undefined) this.inFlight.delete(idempotencyKey);
+    }
 
-      const authContext: ToolAuthorizationContext = {
-        ...context,
-        toolName: request.tool.name,
-        toolVersion: request.tool.version,
-        input: request.input,
-        requestedAction: request.tool.metadata?.requestedAction,
-        permissions: request.tool.permissions,
+    if (!outcome.ok) {
+      return { status: "error", error: outcome.error, attempts, ...(outcome.detail === undefined ? {} : { errorDetail: outcome.detail }) };
+    }
+    if (idempotencyKey !== undefined) {
+      await this.idempotency.set(idempotencyKey, { output: outcome.output }, def.idempotency?.ttlMs);
+    }
+    emit("TOOL_EXECUTION_COMPLETED", { ...ids, attempts, durationMs: Date.now() - startedAt, cached: false });
+    return { status: "success", output: outcome.output, attempts };
+  }
+
+  private async attempt(
+    def: ToolConfig<unknown, unknown>,
+    input: unknown,
+    inv: ToolInvocation,
+    attempt: number,
+    timeoutMs: number,
+  ): Promise<AttemptOutcome> {
+    const controller = new AbortController();
+    const onParentAbort = (): void => controller.abort(inv.signal.reason);
+    if (inv.signal.aborted) onParentAbort();
+    else inv.signal.addEventListener("abort", onParentAbort, { once: true });
+    const timer = setTimeout(
+      () => controller.abort(new ToolTimeoutError(`Tool '${def.name}' timed out after ${timeoutMs}ms`, { toolCallId: inv.toolCallId })),
+      timeoutMs,
+    );
+    const context: ToolContext = {
+      runId: inv.runId,
+      toolCallId: inv.toolCallId,
+      agentId: inv.identity.agent.agentId,
+      ...(inv.stepId === undefined ? {} : { stepId: inv.stepId }),
+      ...(inv.identity.user === undefined ? {} : { user: inv.identity.user }),
+      signal: controller.signal,
+      attempt,
+    };
+    try {
+      // raceAbort enforces the timeout even when the tool ignores its signal.
+      const output = await raceAbort(Promise.resolve().then(() => def.execute(input, context)), controller.signal);
+      if (def.output !== undefined) {
+        const checked = def.output.safeParse(output);
+        if (!checked.success) {
+          return {
+            ok: false,
+            timedOut: false,
+            error: new FrameworkError("TOOL_OUTPUT_INVALID", "tool", `Tool '${def.name}' returned output that failed validation`),
+            detail: z.prettifyError(checked.error),
+          };
+        }
+        return { ok: true, output: checked.data };
+      }
+      return { ok: true, output };
+    } catch (error) {
+      if (inv.signal.aborted) throw error; // run cancellation / run timeout: propagate, never retry
+      if (controller.signal.aborted && controller.signal.reason instanceof ToolTimeoutError) {
+        return { ok: false, timedOut: true, error: controller.signal.reason };
+      }
+      if (error instanceof FrameworkError) return { ok: false, timedOut: false, error };
+      // Raw exception messages may contain internals; keep them out of the model context.
+      return {
+        ok: false,
+        timedOut: false,
+        error: new ToolError(`Tool '${def.name}' failed`, { cause: error, retryable: false }),
+        detail: error instanceof Error ? error.message : String(error),
       };
-
-      const authResult = await this.policyEngine.authorize(authContext);
-      if (!authResult.allowed) {
-        observation.status = "REJECTED";
-        observation.completedAt = new Date().toISOString();
-        observation.error = { code: "TOOL_AUTHORIZATION_ERROR", message: authResult.reason ?? "Not authorized" };
-        await this.emitObservation(observation);
-        await this.audit(observation, false, authResult.reason ?? "Not authorized");
-        return { ok: false, error: observation.error };
-      }
-
-      if (authResult.requiredApproval) {
-        observation.status = "APPROVAL_REQUIRED";
-        observation.approvalId = authResult.approvalId;
-        await this.emitObservation(observation);
-        return { ok: false, error: { code: "APPROVAL_REQUIRED_ERROR", message: "Tool execution requires approval" } };
-      }
-
-      observation.status = "RUNNING";
-      observation.permissionScope = authResult.permissionScope;
-      observation.authorizedBy = authResult.authorizedBy;
-
-      const result = await this.executeWithReliability(request.tool, validatedInput.value, context, observation);
-
-      observation.status = result.ok ? "COMPLETED" : "FAILED";
-      observation.output = result.ok ? result.output : undefined;
-      observation.error = result.error;
-      observation.completedAt = new Date().toISOString();
-      observation.durationMs = Date.now() - startedAt;
-
-      if (observation.durationMs) {
-        observation.metadata = { durationMs: observation.durationMs };
-      }
-
-      await this.emitObservation(observation);
-      await this.audit(observation, result.ok, result.error?.message);
-
-      return result;
-    } catch (err) {
-      const error = err instanceof BaseFrameworkError ? err : new ToolError(String(err), { cause: err, runId: request.runId, toolCallId });
-      observation.status = "FAILED";
-      observation.error = { code: error.code, message: error.message };
-      observation.completedAt = new Date().toISOString();
-      observation.durationMs = Date.now() - startedAt;
-      await this.emitObservation(observation);
-      await this.audit(observation, false, error.message);
-      return { ok: false, error: { code: error.code, message: error.message } };
+    } finally {
+      clearTimeout(timer);
+      inv.signal.removeEventListener("abort", onParentAbort);
     }
   }
 
-  private async executeWithReliability<TInput, TOutput>(
-    tool: Tool<TInput, TOutput>,
-    input: TInput,
-    context: ToolExecutionContext,
-    observation: ToolObservation,
-  ): Promise<ToolResult<TOutput>> {
-    const timeoutMs = tool.timeoutMs ?? 30000;
-    const retryConfig = tool.retry;
+  // ------------------------------------------------------------------ helpers
 
-    let attempt = 0;
-    let lastError: ToolResult<TOutput> | undefined;
+  private approvalRequired(def: ToolConfig<unknown, unknown>, input: unknown, user: Principal | undefined): boolean {
+    const required = def.approval?.required;
+    if (required === undefined) return false;
+    if (typeof required === "boolean") return required;
+    try {
+      return required(input, user === undefined ? {} : { user });
+    } catch {
+      return true; // fail safe: an approval predicate that throws requires approval
+    }
+  }
 
-    const runWithTimeout = async (): Promise<ToolResult<TOutput>> => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        try { controller.abort(new Error("Tool execution timed out")); } catch {}
-      }, timeoutMs);
+  private semaphore(toolName: string, capacity: number): Semaphore {
+    let semaphore = this.semaphores.get(toolName);
+    if (semaphore === undefined) {
+      semaphore = new Semaphore(capacity);
+      this.semaphores.set(toolName, semaphore);
+    }
+    return semaphore;
+  }
 
-      // Forward external caller cancellation into the internal controller so that
-      // Agent.cancel() (or any external AbortSignal) visibly aborts this controller
-      // and is treated as a cancellation/timeout, not a generic tool error.
-      if (context.signal) {
-        if (context.signal.aborted) {
-          controller.abort(context.signal.reason);
-        } else {
-          context.signal.addEventListener("abort", () => controller.abort(context.signal.reason), { once: true });
-        }
-      }
+  private serialize(error: FrameworkError, inv: ToolInvocation): SerializedError {
+    return { ...error.toJSON(), runId: inv.runId, toolCallId: inv.toolCallId, ...(inv.stepId === undefined ? {} : { stepId: inv.stepId }) };
+  }
 
-      try {
-        const output = await tool.execute(input, { ...context, signal: controller.signal });
-        const outputSchema = tool.outputSchema;
-        if (outputSchema) {
-          const parsed = outputSchema.safeParse(output);
-          if (!parsed.success) {
-            return { ok: false, error: { code: "VALIDATION_ERROR", message: `Tool output validation failed: ${parsed.error.message}` } };
-          }
-        }
-        return { ok: true, output };
-      } catch (err) {
-        if (err && (err as any).name === "AbortError") {
-          return { ok: false, error: { code: "TOOL_CALL_TIMED_OUT", message: `Tool execution timed out after ${timeoutMs}ms` } };
-        }
-        const frameworkError = err instanceof BaseFrameworkError ? err : new ToolError(String(err), { cause: err, runId: context.runId, toolCallId: context.toolCallId });
-        if (controller.signal.aborted) {
-          return { ok: false, error: { code: "TOOL_CALL_TIMED_OUT", message: `Tool execution timed out after ${timeoutMs}ms` } };
-        }
-        return { ok: false, error: { code: frameworkError.code, message: frameworkError.message } };
-      } finally {
-        clearTimeout(timeoutId);
-      }
+  private async recordAudit(
+    inv: ToolInvocation,
+    result: ToolInvocationResult,
+    partial: Partial<ToolAuditRecord>,
+    errorDetail: string | undefined,
+  ): Promise<void> {
+    const user = inv.identity.user;
+    const tool = isTool(inv.tool) ? inv.tool : undefined;
+    const record: ToolAuditRecord = {
+      auditId: this.ids.next("tool"),
+      recordedAt: this.clock.now().toISOString(),
+      runId: inv.runId,
+      toolCallId: inv.toolCallId,
+      agentId: inv.identity.agent.agentId,
+      ...(user === undefined ? {} : { userId: user.userId }),
+      ...(user?.tenantId === undefined ? {} : { tenantId: user.tenantId }),
+      toolName: inv.tool.name,
+      ...(tool?.version === undefined ? {} : { toolVersion: tool.version }),
+      toolKind: tool?.kind ?? "unknown",
+      outcome: result.status,
+      ...partial,
+      attempts: result.attempts,
+      durationMs: result.durationMs,
+      cached: result.cached,
+      ...(result.error === undefined
+        ? {}
+        : { error: errorDetail === undefined ? result.error : { ...result.error, metadata: { ...result.error.metadata, detail: errorDetail } } }),
     };
-
-    while (attempt < (retryConfig?.maxAttempts ?? 1)) {
-      attempt++;
-      const result = await runWithTimeout();
-      if (result.ok) {
-        return result;
-      }
-      lastError = result;
-
-      const retryable = isRetryable(result.error?.code);
-      if (!retryable || attempt >= (retryConfig?.maxAttempts ?? 1)) {
-        return { ok: false, error: lastError.error };
-      }
-
-      const delayMs = computeBackoff(retryConfig, attempt);
-      if (delayMs > 0) {
-        await sleep(delayMs, context.signal);
-      }
+    try {
+      await this.audit.record(record);
+    } catch (error) {
+      this.options.onAuditError?.(error, record);
     }
-
-    return { ok: false, error: lastError?.error };
-  }
-
-  private async emitObservation(observation: ToolObservation): Promise<void> {
-    await this.observationEmitter.emit(observation);
-  }
-
-  private async audit(observation: ToolObservation, authorized: boolean, reason?: string): Promise<void> {
-    const entry: ToolAuditEntry = {
-      toolCallId: observation.toolCallId,
-      runId: observation.runId,
-      agentId: observation.agentId,
-      userId: observation.userId,
-      tenantId: observation.tenantId,
-      toolName: observation.toolName,
-      toolVersion: observation.toolVersion,
-      input: observation.input,
-      output: observation.output,
-      status: observation.status,
-      authorized,
-      reason,
-      requestedAt: observation.startedAt,
-      completedAt: observation.completedAt,
-      metadata: Object.assign({}, observation.durationMs ? { durationMs: observation.durationMs } : {}, observation.metadata ? {} : {}),
-    };
-    await this.auditStore.record(entry);
   }
 }
 
-export function validateInput<TInput>(tool: Tool<TInput, unknown>, input: unknown): ValidatedToolInput<TInput> {
-  try {
-    const parsed = tool.inputSchema.safeParse(input);
-    if (parsed.success) {
-      return { ok: true, value: parsed.data };
-    }
-    const message = parsed.error && typeof parsed.error === "object" && "message" in parsed.error ? String((parsed.error as any).message) : "Invalid tool input";
-    return { ok: false, error: { code: "VALIDATION_ERROR", message: `Invalid tool input: ${message}` } };
-  } catch (err) {
-    return { ok: false, error: { code: "VALIDATION_ERROR", message: "Input validation failed" } };
-  }
+/** SHA-256 over a canonical (key-sorted) JSON encoding of the validated arguments. */
+export function hashArguments(value: unknown): string {
+  return createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
-export function isRetryable(code: string | undefined): boolean {
-  return code === "LLM_ERROR" || code === "INFRASTRUCTURE_ERROR" || code === "TOOL_ERROR" || code === "VALIDATION_ERROR";
-}
-
-function computeBackoff(config: ToolRetryConfig | undefined, attempt: number): number {
-  if (!config) return 0;
-  const initial = config.initialDelayMs ?? 100;
-  if (config.backoff === "exponential") {
-    return initial * Math.pow(2, attempt - 1);
-  }
-  return initial;
-}
-
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new Error("Aborted"));
-      return;
-    }
-    const id = setTimeout(() => resolve(), ms);
-    signal?.addEventListener("abort", () => {
-      clearTimeout(id);
-      reject(new Error("Aborted"));
-    }, { once: true });
-  });
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(",")}}`;
 }

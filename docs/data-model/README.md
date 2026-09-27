@@ -1,5 +1,7 @@
 # Data model
 
+> **Implemented so far:** `AgentState`, `ExecutionStep`, `UsageTotals`, `PendingApproval` (`packages/core/src/types.ts`), `ApprovalRequest` / `ApprovalDecision` (`packages/core/src/tool.ts`), event envelopes (`events.ts`) and `ToolAuditRecord` (`packages/tools/src/stores.ts`). The entities below describe the full target model; relational schemas come with the durable store adapters (Phase 14).
+
 The framework needs a persistent, reconstructable execution model. The data model is designed to answer:
 
 - what happened?

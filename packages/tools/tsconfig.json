@@ -3,8 +3,18 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
-  "include": ["src"],
-  "exclude": ["dist", "node_modules", ".tsbuildinfo"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/test-helpers.ts"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    }
+  ]
 }

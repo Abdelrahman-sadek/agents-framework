@@ -165,6 +165,26 @@ Controls:
 - validate and constrain integration points
 - maintain adapter boundaries so provider-specific weaknesses do not spread into the core
 
+## Implemented controls (Phase 2)
+
+| Control | Where | Test coverage |
+| --- | --- | --- |
+| Model cannot reach `execute` except through `ToolRuntime` | `ToolInvoker` port, branded tools | `security.test.ts` |
+| Only tools registered on the agent can be called | agent runtime (`TOOL_NOT_FOUND`) | `security.test.ts` |
+| Schema validation of model-generated arguments (malformed JSON, wrong types, extra keys) | `ToolRuntime` | `security.test.ts`, `tool-runtime.test.ts` |
+| Deterministic authorization: agent **and** user must hold each permission, fail closed | `permissionPolicy`, `allOf` | `security.test.ts` |
+| LLM judges cannot authorize | `decisionPolicy` requires deterministic providers | `security.test.ts` |
+| Approval bound to call id + argument hash, expiring, re-authorized on resume | `ToolRuntime`, agent runtime | `security.test.ts`, integration tests |
+| Hard limits: steps, tool calls, tokens, cost, timeouts (enforced even when callees ignore signals) | agent runtime, `ToolRuntime` | `runtime.test.ts`, `security.test.ts` |
+| Rate limits and concurrency limits per tool / tenant / user | `ToolRuntime` | `tool-runtime.test.ts` |
+| Idempotent side effects | `ToolRuntime` idempotency | `tool-runtime.test.ts` |
+| Tool metadata, permissions and denial reasons never sent to the model | tool definition export, error messages | `security.test.ts` |
+| Raw exception messages kept out of model context | `ToolRuntime` | `tool-runtime.test.ts` |
+| Sensitive inputs redacted from audit; events carry no arguments/outputs | `sensitive`, event design | `security.test.ts` |
+| Audit record for every tool invocation, including denials | `AuditSink` | `tool-runtime.test.ts` |
+
+Not yet implemented: prompt-injection detection, input/output guardrails, SSRF-safe HTTP adapter, tenant-scoped storage adapters, secret management integration and OpenTelemetry redaction (Phases 11–12).
+
 ## Controls summary
 
 Deterministic controls:

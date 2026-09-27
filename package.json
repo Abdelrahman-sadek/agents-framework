@@ -1,27 +1,33 @@
 {
-  "name": "enterprise-agent-framework",
-  "version": "0.1.0-workspace",
+  "name": "agent-framework",
+  "version": "0.1.0",
   "private": true,
   "description": "Enterprise AI Agent Framework for TypeScript/Node.js",
   "license": "Apache-2.0",
+  "type": "module",
   "scripts": {
-    "build": "pnpm -r --parallel --filter '**' run build",
-    "typecheck": "tsc -b",
-    "typecheck:all": "pnpm -r --parallel --filter '**' run typecheck",
-    "test": "vitest run --config vitest.workspaces.config.ts",
-    "test:packages": "pnpm -r --parallel --filter '**' run test",
-    "dev": "tsc -b --watch",
-    "example:hello": "npx tsx examples/hello-agent/index.ts"
+    "build": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.dev.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "clean": "rm -rf packages/*/dist",
+    "example:hello": "tsx --tsconfig tsconfig.dev.json examples/hello-agent/index.ts",
+    "example:approval": "tsx --tsconfig tsconfig.dev.json examples/approval-agent/index.ts"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.3.0"
   },
   "packageManager": "pnpm@10.12.0",
-  "pnpm": {
-    "overrides": {},
-    "packageExtensions": {}
-  },
   "devDependencies": {
-    "zod": "^4.6.5"
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.2.0",
+    "zod": "^4.1.0"
   }
 }

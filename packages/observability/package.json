@@ -1,40 +1,25 @@
 {
   "name": "@agent-framework/observability",
   "version": "0.1.0",
-  "description": "OpenTelemetry tracing, metrics, logs, cost tracking, run inspection, redaction policies",
+  "description": "Observability (planned): OpenTelemetry bridge, metrics, cost tracking, redaction",
   "license": "Apache-2.0",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "private": true,
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.3.0"
+  },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-trace-node": "^1.25.0",
-    "@opentelemetry/sdk-metrics": "^1.25.0",
-    "@opentelemetry/instrumentation-http": "^0.52.0",
-    "@opentelemetry/semantic-conventions": "^1.25.0",
-    "@agent-framework/core": "0.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.7.0",
-    "vitest": "^2.1.0",
-    "eslint": "^9.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "typescript-eslint": "^8.0.0",
-    "globals": "^16.0.0"
+    "test": "vitest run --root ../.. --project observability"
   }
 }

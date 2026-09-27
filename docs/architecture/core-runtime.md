@@ -1,119 +1,87 @@
-## Runtime interface sketch
+# Core runtime
 
-```typescript
-interface AgentRuntime {
-  readonly provider: LLMProvider;
-  readonly eventEmitter: EventEmitter;
-  readonly runIdGenerator: RunIdGenerator;
-  readonly clock: Clock;
-}
+`@agent-framework/core` is the smallest stable part of the framework. It owns agent definition, the run loop, state, events, errors and limits, and it defines the **ports** everything else plugs into. It depends on no vendor SDK, database, queue, telemetry library or protocol.
 
-interface EventEmitter {
-  emit(event: AgentEvent, agentId: string, actor?: string, correlationId?: string): void;
-}
+```
+                 ┌───────────────────────── @agent-framework/core ─────────────────────────┐
+defineAgent() ──▶│ Agent ──▶ AgentRuntime (createRuntime)                                    │
+                 │             │  run loop · limits · retries · cancellation · state        │
+                 │             ├──▶ LLMProvider        (adapters: OpenAI, Anthropic, local…) │
+                 │             ├──▶ ToolInvoker        (@agent-framework/tools ToolRuntime)  │
+                 │             ├──▶ ContextManager     (Phase 4 context engine)             │
+                 │             ├──▶ RunStateStore      (memory · PostgreSQL · Redis · …)     │
+                 │             ├──▶ EventSink[]        (logs · OTel bridge · UI · audit)     │
+                 │             └──▶ Clock · IdGenerator                                      │
+                 │ DecisionEngine / DecisionProvider (deterministic decisions)              │
+                 └──────────────────────────────────────────────────────────────────────────┘
+```
 
-interface RunIdGenerator {
-  generate(): string;
-}
+## Composition, not globals
 
-interface Clock {
-  nowISO(): string;
+```ts
+const runtime = createRuntime({ providers, tools, events, stateStore, context, limits, clock, ids });
+```
+
+`createRuntime` validates its options and fails fast. Agents receive the runtime explicitly. Tests build their own runtime with a scripted provider, a fixed clock and sequential ids. There is no module-level state.
+
+## The run loop
+
+`runtime.run(agent, options)`:
+
+1. **Prepare.** Resolve the provider by `model.providerId` and merge its `capabilities(modelId)` with selector overrides. Fail fast if the agent has tools but there is no `ToolInvoker`, or the model can't call tools.
+2. **Initialize state.** Create `AgentState` (`RUNNING`) with system instructions and the user input. Resolve limits (framework → agent → run). Link the caller's `AbortSignal` and start the run timer.
+3. **Loop.**
+   - Check cancellation, timeout and `maxSteps`.
+   - Build the request through `ContextManager.assemble()` (pass-through by default).
+   - Call `provider.generate()`, racing the abort signal. Retry `retryable` errors with backoff up to `maxLLMRetries`.
+   - Record usage and estimated cost, then check `maxTokens` and `maxCost`.
+   - No tool calls: validate output and finish (`COMPLETED`).
+   - Otherwise, for each call: check `maxToolCalls` and send it to the `ToolInvoker`. Results become tool messages.
+   - If any call needs approval, save state and return `WAITING_FOR_APPROVAL`.
+   - Checkpoint state.
+4. **Finish.** Errors are normalized into `FrameworkError`s and mapped to `FAILED`, `CANCELLED`, `TIMED_OUT` or `APPROVAL_EXPIRED`. Running steps are marked failed, and final state is saved.
+
+`runtime.resume(agent, { runId, approvals })` loads the state, validates that the run is waiting and that each approval id is pending, re-invokes the decided tool calls (the tool runtime re-validates and re-authorizes them), and continues the loop.
+
+### What the runtime never delegates to the model
+
+Permission to run a tool, limits and budgets, retry decisions, state transitions, persistence, audit, and which tools exist. The model's output is data: tool calls are parsed and validated like any untrusted input.
+
+## State
+
+`AgentState` is plain, serializable data: ids, status, input, user principal, full message transcript, steps, usage, pending approvals (with the original tool call), resolved limits, metadata, output or error, the event sequence, and timestamps. Nothing an agent "knows" exists only inside a prompt.
+
+## LLM providers
+
+```ts
+interface LLMProvider {
+  readonly id: string;
+  capabilities(modelId: string): ModelCapabilities | Promise<ModelCapabilities>;
+  generate(request: LLMRequest): Promise<LLMResponse>;
+  stream?(request: LLMRequest): AsyncIterable<LLMStreamEvent>;
 }
 ```
 
-The runtime is composed explicitly. A minimal Phase 1 runtime looks like:
+Adapters must:
 
-```typescript
-new DefaultAgentRuntime(
-  provider,
-  eventEmitter,
-  runIdGenerator,
-  clock
-)
-```
+- map `LLMMessage`s, including assistant `toolCalls` and `tool` results, to the vendor format;
+- honour `request.signal`;
+- return tool call `arguments` as the raw JSON string;
+- report `usage` (and `costUsd` if the vendor reports cost);
+- throw `LLMError` / `RateLimitError` with `retryable: true` for transient failures.
 
-This keeps the runtime testable and replaceable. It also avoids hidden global state.
+`ModelCapabilities` describes locality (`cloud`/`local`), context window, tool calling, structured output, streaming, vision, embeddings, pricing, latency and allowed data classifications. A later model router can choose models from task requirements, capabilities, cost, latency and locality. `LLMModelSelector.fallbacks` is reserved for that.
 
-## Public API integration
+> **Why the LLM contract lives in core:** the runtime needs it to run agents, and keeping it in the dependency-free core lets any provider adapter depend on `core` alone. `@agent-framework/llm` holds selectors today and the gateway features (routing, fallbacks, caching) later. See [ADR 018](../decisions/018-tool-system.md).
 
-The agent API uses the runtime internally. Developers do not normally construct the runtime directly, but they may provide their own implementations of:
+## Durability boundary
 
-- `EventEmitter`
-- `RunIdGenerator`
-- `Clock`
-- `LLMProvider`
+The core has no queue API. The durable-execution boundary is `RunStateStore` plus the explicit state machine:
 
-for testing, local customization, or embedded scenarios.
+- Every transition that matters (model turn, waiting for approval, terminal state) is checkpointed.
+- `resume()` needs only the stored state and the agent definition, so it works in a new request, a new process, or on another worker.
+- Caller-supplied `runId`s make run creation idempotent at the API edge.
 
-## Durable execution boundary
+PostgreSQL-, SQLite-, Redis- and Temporal-backed runners ([ADR 013](../decisions/013-temporal-durable-execution.md)) sit *outside* the core. They persist `AgentState`, schedule `run`/`resume` on workers, and handle leases and recovery. Nothing in the loop assumes a single process or an open HTTP request.
 
-Phase 1 does not implement full durable execution. It does, however, avoid assumptions that would block later durable execution:
-
-- runs have `runId`, timestamps, status, and events
-- execution state is explicit
-- the runtime does not assume a single in-process HTTP request owns the run
-- approval/blocking is expressed as runtime state and events, not as a side effect
-
-Later phases can introduce:
-
-- an execution/durable-execution abstraction
-- implementation adapters for local, PostgreSQL-backed, Redis-backed, and Temporal-backed execution
-
-No queue API is introduced into the core runtime in Phase 1 or Phase 2.
-
-## Reserved extension points
-
-Phase 1 intentionally reserves a small number of extension points so later phases do not have to redesign core interfaces:
-
-- **DecisionProvider / DecisionEngine**: deterministic decisioning separate from LLM reasoning. Future uses include routing, classification, ranking, verification, guard decisions, prompt-injection detection, destructive-action gating, context compaction decisions, and parts of evaluation.
-- **ContextManager**: context selection, ranking, deduplication, compression, summarization, token budgeting, and provenance.
-- **Tool authorization context**: tool execution must carry user, agent, tenant, tool, and data context so the runtime can decide authoritatively.
-
-These are reserved abstractions. They are not fully implemented yet.
-
-## Determinism again
-
-The runtime is the place where we decide what is deterministic and what is not. That decision is architectural, not incidental.
-
-Deterministic:
-
-- run identity
-- state transitions
-- limits
-- event ordering in the runtime record
-- error classification
-- retry/timeout behavior for runtime-managed operations
-
-Not deterministic:
-
-- LLM output
-- planner/critic suggestions
-- retrieval ranking
-- optional model-assisted verification
-
-The runtime may use intelligence, but it must not become dependent on intelligence for correctness or authority.
-
-## Review result
-
-Phase 1 passes the review.
-
-- Provider independence is intact.
-- Durable execution is not blocked.
-- Deterministic decisioning and context management are reserved as extension points.
-- Tool runtime is the correct next boundary for Phase 2.
-- Skills, sandbox, and model router are documented as future extension points.
-- No new hard dependency was introduced for any vendor or infrastructure system.
-
-
-
-
-
-## Reserved extension points
-
-Phase 1 intentionally reserves a small number of extension points so later phases do not have to redesign core interfaces:
-
-- **DecisionProvider / DecisionEngine**: deterministic decisioning separate from LLM reasoning. Future uses include routing, classification, ranking, verification, guard decisions, prompt-injection detection, destructive-action gating, context compaction decisions, and parts of evaluation.
-- **ContextManager**: context selection, ranking, deduplication, compression, summarization, token budgeting, and provenance.
-- **Tool authorization context**: tool execution must carry user, agent, tenant, tool, and data context so the runtime can decide authoritatively.
-
-These are reserved abstractions. They are not fully implemented yet.
+Current limitations: the in-memory store is the only implementation and there is no recovery runner yet. When one is added, a turn interrupted by a crash will replay from the last checkpoint, and tool idempotency keys are what protect side effects in that case. Streaming isn't wired into the loop yet.

@@ -1,20 +1,17 @@
-# Hello agent example
+# Example 1 — Simple agent
 
-Minimal example showing the Phase 1 public API:
-
-- define an agent
-- run it
-- observe lifecycle events
-- receive a typed result
-
-It uses only the public `@agent-framework/core` surface.
+`User → Agent → Tool → Answer`
 
 ```bash
 pnpm example:hello
 ```
 
-or:
+Shows the minimal public API: `defineTool`, `createRuntime`, `defineAgent`, `agent.run`.
+The model is scripted so the example is deterministic and needs no API key; replace
+`createScriptedProvider(...)` with a real `LLMProvider` adapter to use a live model.
 
-```bash
-cd examples/hello-agent && pnpm run run
-```
+What to look for in the output:
+
+- the tool call passes through authorization (`TOOL_AUTHORIZATION_*`) before execution;
+- every step is an event with a sequence number;
+- the audit log records who called what, and why it was allowed.

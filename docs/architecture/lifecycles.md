@@ -57,6 +57,22 @@ Invariants:
 - tool outputs are validated
 - the call is recorded for audit
 
+**Implementation (Phase 2).** The states map to events and to `ToolInvocationResult.status`:
+
+| Lifecycle state | Event(s) | Result status |
+| --- | --- | --- |
+| `TOOL_REQUESTED` | `TOOL_REQUESTED` | — |
+| `VALIDATED` | (failure → step `VALIDATION_ERROR`) | `error` |
+| `AUTHORIZED` | `TOOL_AUTHORIZATION_STARTED/COMPLETED` | `denied` on failure |
+| `APPROVAL_REQUIRED` | `TOOL_APPROVAL_REQUIRED` | `approval_required` |
+| `REJECTED` | `TOOL_APPROVAL_REJECTED` | `rejected` |
+| `EXECUTING` | `TOOL_EXECUTION_STARTED` (per attempt) | — |
+| `TIMEOUT` | `TOOL_EXECUTION_TIMED_OUT` | `error` (`TOOL_TIMEOUT`) |
+| `FAILED` | `TOOL_EXECUTION_FAILED` | `error` |
+| `RESULT_VALIDATED` / `COMPLETED` | `TOOL_EXECUTION_COMPLETED` | `success` |
+
+`GUARDRAILED` is currently covered by `ToolPolicy`. A dedicated guardrail stage comes in Phase 11.
+
 ## Planning lifecycle
 
 Plans are structured and observable. The planner produces a plan, the runtime validates and schedules it, and the runtime monitors execution.
@@ -143,6 +159,8 @@ Invariants:
 - a restart does not lose a pending approval
 - approval can carry expiration and escalation rules
 - only the relevant authorized human/process can approve
+
+**Implementation (Phase 2).** `ACTION_PROPOSED`/`APPROVAL_REQUESTED` → `TOOL_APPROVAL_REQUIRED`; run status `WAITING_FOR_APPROVAL` with `pendingApprovals` persisted in `AgentState`; `agent.resume()` → `APPROVED` (`TOOL_APPROVAL_GRANTED`, then re-authorization and execution) or `REJECTED` (`TOOL_APPROVAL_REJECTED`, model informed, run continues); `EXPIRED` → run status `APPROVAL_EXPIRED`. `ESCALATED` and argument modification are not implemented yet. Survival across restarts requires a durable `RunStateStore`.
 
 ## Execution durability lifecycle
 
