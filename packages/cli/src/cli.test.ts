@@ -8,6 +8,12 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test, vi } from "vitest";
+
+/** node:sqlite ships with Node ≥ 22.5; SQLite-backed tests are skipped on older runtimes. */
+const hasSqlite = await import("node:sqlite").then(
+  () => true,
+  () => false,
+);
 import { z } from "zod";
 import { runCli } from "./cli.js";
 import { checkManifest, defineAgentFromManifest, parseManifest } from "./manifest.js";
@@ -80,7 +86,7 @@ describe("agent dev / test / evaluate", () => {
   });
 });
 
-describe("agent inspect / trace", () => {
+describe.skipIf(!hasSqlite)("agent inspect / trace", () => {
   test("inspect reads persisted state; trace renders the event timeline", async () => {
     const t = io();
     const db = join(t.cwd, "runs.db");

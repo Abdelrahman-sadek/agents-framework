@@ -2,6 +2,12 @@ import { InMemoryRunStateStore, createRuntime, defineAgent, sequentialIds, type 
 import { createScriptedProvider, type ScriptedStep } from "@agent-framework/core/testing";
 import { ToolRuntime, defineTool } from "@agent-framework/tools";
 import { describe, expect, test, vi } from "vitest";
+
+/** node:sqlite ships with Node ≥ 22.5; SQLite-backed tests are skipped on older runtimes. */
+const hasSqlite = await import("node:sqlite").then(
+  () => true,
+  () => false,
+);
 import { z } from "zod";
 import { createFramework } from "./framework.js";
 import { createHealthCheck } from "./health.js";
@@ -136,7 +142,7 @@ describe("queue → worker → state", () => {
   });
 });
 
-describe("SQLite durability", () => {
+describe.skipIf(!hasSqlite)("SQLite durability", () => {
   test("run state and jobs survive a new process (reopened database)", async () => {
     const { mkdtempSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
