@@ -1,7 +1,17 @@
 /**
- * @agent-framework/evaluation — reserved package.
- *
- * Evaluation (planned): datasets, evaluators, regression and safety evaluation.
- * See docs/roadmap.md for the phase that implements it.
+ * @agent-framework/evaluation — datasets, evaluators, reports and regression checks.
  */
-export {};
+export { compareReports, defineDataset, defineEvaluation, evaluators, formatReport } from "./evaluation.js";
+export type {
+  CaseResult,
+  Dataset,
+  EvalCase,
+  EvalTarget,
+  Evaluation,
+  EvaluationConfig,
+  EvaluationReport,
+  Evaluator,
+  Observation,
+  RegressionComparison,
+  Score,
+} from "./evaluation.js";

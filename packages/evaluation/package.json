@@ -1,10 +1,9 @@
 {
   "name": "@agent-framework/evaluation",
   "version": "0.1.0",
-  "description": "Evaluation (planned): datasets, evaluators, regression and safety evaluation",
+  "description": "Evaluation: datasets, deterministic and LLM-judge evaluators, tool/retrieval/safety/cost/latency evaluation, reports and regression comparison",
   "license": "Apache-2.0",
   "type": "module",
-  "private": true,
   "sideEffects": false,
   "exports": {
     ".": {
@@ -21,5 +20,13 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run --root ../.. --project evaluation"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@agent-framework/knowledge": "workspace:*",
+    "@agent-framework/security": "workspace:*",
+    "@agent-framework/tools": "workspace:*"
   }
 }

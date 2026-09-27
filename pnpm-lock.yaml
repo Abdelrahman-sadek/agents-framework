@@ -43,7 +43,21 @@ importers:
 
   packages/core: {}
 
-  packages/evaluation: {}
+  packages/evaluation:
+    dependencies:
+      '@agent-framework/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@agent-framework/knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@agent-framework/security':
+        specifier: workspace:*
+        version: link:../security
+      '@agent-framework/tools':
+        specifier: workspace:*
+        version: link:../tools
 
   packages/knowledge:
     dependencies:
