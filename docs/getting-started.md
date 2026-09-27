@@ -4,6 +4,20 @@ This guide takes you from a clone to a running agent that calls a tool.
 
 ## 1. Install
 
+As a dependency, from GitHub Packages:
+
+```bash
+# .npmrc (needs a GitHub token with read:packages)
+@agent-framework:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+```bash
+npm install @agent-framework/core @agent-framework/tools @agent-framework/llm zod
+```
+
+Or from source:
+
 ```bash
 git clone https://github.com/Abdelrahman-sadek/agents-framework.git
 cd agents-framework

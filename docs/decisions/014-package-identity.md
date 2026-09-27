@@ -42,3 +42,7 @@ npm publication naming is unresolved until availability is verified. This does n
 - Implementation can proceed without a finalized public scope.
 - Publication naming must be verified before any publish.
 - If the working name changes later, it should be a deliberate rename with a migration note.
+
+## Update (publication)
+
+The packages are published as `@agent-framework/*` to **GitHub Packages**, under the GitHub organization that owns the repository (the scope must match the organization name). npmjs.com publication is deferred until an npm account is available. The same names are kept, so moving later only changes the registry.

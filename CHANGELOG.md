@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows
 - Production stores: `PgVectorStore`, `PostgresMemoryStore`, `RedisRateLimiter`, `RedisIdempotencyStore`.
 - `@agent-framework/mcp` (MCP servers as framework tools) and `@agent-framework/sandbox` (workspace-confined files, allow-listed commands).
 - Dashboard: `createDashboardServer` and `agent dashboard`.
-- Release workflow and publish metadata.
+- Release workflow publishing to GitHub Packages (`@agent-framework/*`), manual or on `v*` tags; install instructions.
 
 ### Fixed
 

@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
   "keywords": [

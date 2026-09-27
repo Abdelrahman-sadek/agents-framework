@@ -38,6 +38,12 @@ Changes to a public contract (`Agent`, `LLMProvider`, `ToolInvoker`, `RunStateSt
 
 Everything exported from a package's `index.ts` is public API and follows semantic versioning once 1.0 ships. Exports marked `@experimental` may change in minor releases. Anything not exported is internal.
 
+## Releasing
+
+1. Bump `version` in the changed `packages/*/package.json` files and move the **Unreleased** changelog entries under the new version.
+2. Merge to `main`, then push a tag: `git tag v0.2.0 && git push origin v0.2.0`.
+3. The Release workflow runs `pnpm check`, builds, and publishes every package to GitHub Packages with the built-in `GITHUB_TOKEN`. It can also be started manually from the Actions tab.
+
 ## Pull requests
 
 - Keep PRs focused on one change.

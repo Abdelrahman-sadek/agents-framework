@@ -88,7 +88,21 @@ const result = await agent.run({ input: "Refund order 77", user });
 
 ## Quickstart
 
-Requires **Node.js ≥ 20.3** (≥ 22.5 for the SQLite adapters) and **pnpm 10** (via Corepack). The packages are not on npm yet, so run from source:
+Requires **Node.js ≥ 20.3** (≥ 22.5 for the SQLite adapters).
+
+**Install as a dependency** (packages are published to [GitHub Packages](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)):
+
+```bash
+# .npmrc in your project. GitHub Packages needs a token with read:packages, even for public packages
+@agent-framework:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+```bash
+npm install @agent-framework/core @agent-framework/tools @agent-framework/llm zod
+```
+
+**Or run from source** (pnpm 10 via Corepack):
 
 ```bash
 git clone https://github.com/Abdelrahman-sadek/agents-framework.git
@@ -281,7 +295,7 @@ Yes. `mcpTools()` turns any MCP server's tools into framework tools, so they get
 <details>
 <summary><b>Is it production-ready?</b></summary>
 
-The runtime, tools, security and production packages have extensive tests (281 across 15 packages), durable PostgreSQL/SQLite state, queues with leases, crash recovery and health checks. The project is **0.x**: APIs may still change in minor versions, and packages are not yet published to npm. See [Production](./docs/production.md) and the [roadmap](./docs/roadmap.md).
+The runtime, tools, security and production packages have extensive tests (281 across 15 packages), durable PostgreSQL/SQLite state, queues with leases, crash recovery and health checks. The project is **0.x**: APIs may still change in minor versions. Packages are published to GitHub Packages; npmjs.com comes later. See [Production](./docs/production.md) and the [roadmap](./docs/roadmap.md).
 </details>
 
 <details>
@@ -323,7 +337,8 @@ Tests use Vitest and import sources directly, so no build step is needed. Detail
 ## Status and roadmap
 
 - ✅ All 14 planned phases, plus streaming, skills, model router, MCP, sandbox, dashboard, pgvector and Redis stores.
-- ⏭️ Next: publish 0.x to npm, a container sandbox runner, a Temporal worker, a native Gemini adapter.
+- 📦 Published to GitHub Packages under `@agent-framework/*`.
+- ⏭️ Next: mirror to npmjs.com, a container sandbox runner, a Temporal worker, a native Gemini adapter.
 
 Details: [docs/roadmap.md](./docs/roadmap.md) · [CHANGELOG.md](./CHANGELOG.md).
 

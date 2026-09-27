@@ -1,6 +1,6 @@
 # Agent Framework
 
-> TypeScript/Node.js framework for building production AI agents. The model requests actions; deterministic code authorizes, executes, limits and audits them. Provider-independent (Claude, OpenAI-compatible, local models), with tool calling, human approval, RAG, memory, multi-agent orchestration, guardrails, MCP, sandboxed tools, OpenTelemetry observability, evaluation and a durable production runtime. Monorepo of 15 packages under @agent-framework/*. Apache-2.0. Status: 0.x, run from source (not yet on npm).
+> TypeScript/Node.js framework for building production AI agents. The model requests actions; deterministic code authorizes, executes, limits and audits them. Provider-independent (Claude, OpenAI-compatible, local models), with tool calling, human approval, RAG, memory, multi-agent orchestration, guardrails, MCP, sandboxed tools, OpenTelemetry observability, evaluation and a durable production runtime. Monorepo of 15 packages under @agent-framework/*. Apache-2.0. Status: 0.x. Published to GitHub Packages (registry https://npm.pkg.github.com, scope @agent-framework; needs a token with read:packages); also runnable from source.
 
 Key facts:
 - Entry points: defineAgent + createRuntime (@agent-framework/core), defineTool + ToolRuntime (@agent-framework/tools).
