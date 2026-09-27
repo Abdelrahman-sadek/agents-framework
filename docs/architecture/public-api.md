@@ -55,6 +55,23 @@ const result = await agent.run({ input: "Research X" });
 | `models.openai / anthropic / gemini / openrouter / local / custom` | Serializable model selectors |
 | `withFallbacks(primary, …fallbacks)` | `@experimental`: stored, not yet acted on |
 
+## Other packages
+
+| Package | Main exports |
+| --- | --- |
+| `@agent-framework/context` | `createContextEngine`, `llmSummarizer`, `approximateTokenCounter` |
+| `@agent-framework/knowledge` | `createKnowledgeBase`, `recursiveChunker`, `fixedSizeChunker`, `htmlToText`, `hashingEmbedder`, `InMemoryVectorStore`, `bm25`, `lexicalReranker` |
+| `@agent-framework/memory` | `createMemory`, `Memory`, `InMemoryMemoryStore`, `DEFAULT_SECRET_PATTERNS` |
+| `@agent-framework/orchestration` | `defineOrchestrator`, `defineWorker`, `staticPlanner`, `llmPlanner`, `validatePlan`, `agentAsTool`, `supervisor`, `runPipeline`, `runParallel`, `agentVerifier` |
+| `@agent-framework/security` | guardrails (`piiGuardrail`, `promptInjectionGuardrail`, `secretLeakGuardrail`, `contentPolicyGuardrail`, `maxLengthGuardrail`), policies (`rbacPolicy`, `abacPolicy`, `tenantIsolationPolicy`, `dataClassificationPolicy`), `createEgressPolicy`, `safeFetch`, `defineHttpTool`, `envSecrets`, `principalFromClaims` |
+| `@agent-framework/observability` | `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `readEventFile`, `CostTracker`, `inspectRun`, `formatRunReport` |
+| `@agent-framework/evaluation` | `defineDataset`, `defineEvaluation`, `evaluators`, `formatReport`, `compareReports` |
+| `@agent-framework/production` | `createFramework`, `AgentWorker`, `AgentService`, run-state stores, job queues, `createHealthCheck`, `installGracefulShutdown`, `openSqlite` |
+| `@agent-framework/provider-anthropic` | `anthropicProvider`, `ANTHROPIC_MODELS` |
+| `@agent-framework/cli` | `runCli`, `defineAgentFromManifest`, `parseManifest`, `checkManifest` (+ `agent` binary) |
+
+Core additions since Phase 2: `runtime.recover` / `agent.recover`, `ContextProvider` / `ContextItem`, `Guardrail`, `Verifier` with `ruleVerifier` / `citationVerifier` / `llmCritic`, `EmbeddingProvider`, `createEventEmitter`, `createRuleProvider` (testing).
+
 ## Configuration levels
 
 | Level | Where | Examples |

@@ -24,6 +24,28 @@
 | `WAITING_FOR_APPROVAL` | A tool needs a human decision. | Call `agent.resume({ runId, approvals })`. |
 | `APPROVAL_EXPIRED` | The approval was decided after `expiresAt`. | Start a new run, or raise `approval.expiresInMs`. |
 
+| `FAILED` · `GUARDRAIL_BLOCKED` | An input or output guardrail blocked content. | Check `GUARDRAIL_TRIGGERED` events for the guardrail and stage. |
+| `FAILED` · `VERIFICATION_FAILED` | Verifiers rejected every revision. | Read `error.metadata.failures`. Raise `maxReflectionAttempts` or fix instructions. |
+| `FAILED` · `CONTEXT_LIMIT_ERROR` | System prompt + task + last turn exceed the context budget. | Shorten instructions or input, lower `reserveOutputTokens`, or use a larger-context model. |
+| `RUNNING` in the store, no worker | The worker died mid-run. | A worker will `recover()` it after the job lease expires, or call `runtime.recover(agent, { runId })`. |
+
+## Orchestration
+
+| Symptom | Cause |
+| --- | --- |
+| `PLANNING_ERROR … unknown worker` | The planner proposed a worker that does not exist. Improve worker descriptions or use `staticPlanner`. |
+| Steps `SKIPPED` | A dependency failed. See `WORKER_FAILED` events. |
+| `APPROVAL_REQUIRED` from a worker | An agent worker hit an approval-gated tool. Handle the action in a deterministic worker, or run that agent outside the orchestrator. |
+| Delegation fails with `LIMIT_EXCEEDED` | `agentAsTool` depth limit reached. |
+
+## Production
+
+| Symptom | Cause |
+| --- | --- |
+| `createFramework` throws "Production configuration is incomplete" | Provide durable run state and audit sinks, and a `maxCost` or `maxTokens` budget. |
+| Job `failed` with `lastError` | Infrastructure failures exhausted `maxAttempts`. Check the database, then re-enqueue. |
+| `node:sqlite` import error | SQLite adapters need Node ≥ 22.5. |
+
 ## Tool call problems (the run continues; the step fails)
 
 Look at `result.steps` (`kind: "tool_call"`) and the tool audit log.
