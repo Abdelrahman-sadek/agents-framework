@@ -88,31 +88,69 @@ const result = await agent.run({ input: "Refund order 77", user });
 
 ## Quickstart
 
-Requires **Node.js ≥ 20.3** (≥ 22.5 for the SQLite adapters).
+Choose a path. **A** takes two minutes and needs no API key. **B** sets the framework up in your own project.
 
-**Install as a dependency** (packages are published to [GitHub Packages](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)):
+### A. Try it in 2 minutes (no API key needed)
 
-```bash
-# .npmrc in your project. GitHub Packages needs a token with read:packages, even for public packages
-@agent-farmework:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
+You need [Node.js](https://nodejs.org) 20 or newer (22 recommended) and [Git](https://git-scm.com).
 
-```bash
-npm install @agent-farmework/core @agent-farmework/tools @agent-farmework/llm zod
-```
-
-**Or run from source** (pnpm 10 via Corepack):
+**1. Download the project**
 
 ```bash
 git clone https://github.com/agent-farmework/agents-framework.git
 cd agents-framework
-corepack enable
-pnpm install
-pnpm examples          # runs all six examples offline, no API key needed
 ```
 
-A complete agent with one tool:
+**2. Install**
+
+```bash
+corepack enable        # turns on pnpm, which ships with Node.js
+pnpm install
+```
+
+**3. Run an example**
+
+```bash
+pnpm example:hello
+```
+
+You'll see an agent call a tool and answer, followed by every step it took (events) and the audit log. It uses a built-in pretend model, so no key or internet is needed.
+
+**4. Try the others**
+
+```bash
+pnpm example:rag          # answers from documents, with citations
+pnpm example:approval     # pauses for a human to approve a refund
+pnpm example:enterprise   # everything together
+```
+
+Open `examples/hello-agent/index.ts` to see the code behind what you just ran.
+
+### B. Use it in your own project
+
+**1. Create a GitHub token.** The packages live on GitHub Packages, which asks for a token even for public packages.
+
+GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)** → **Generate new token**. Tick only **`read:packages`**, then copy the token.
+
+**2. Create a project and tell npm where the packages are**
+
+```bash
+mkdir my-agent && cd my-agent
+npm init -y
+npm pkg set type=module
+echo "@agent-farmework:registry=https://npm.pkg.github.com" >> .npmrc
+echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+export GITHUB_TOKEN=paste-your-token-here
+```
+
+**3. Install**
+
+```bash
+npm install @agent-farmework/core @agent-farmework/tools @agent-farmework/llm @agent-farmework/provider-anthropic zod
+npm install -D tsx
+```
+
+**4. Write your agent.** Save this as `agent.ts`:
 
 ```ts
 import { createRuntime, defineAgent } from "@agent-farmework/core";
@@ -121,6 +159,7 @@ import { anthropicProvider } from "@agent-farmework/provider-anthropic";
 import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
+// A tool the model may ask to use.
 const getWeather = defineTool({
   name: "get_weather",
   description: "Current weather for a city",
@@ -129,11 +168,13 @@ const getWeather = defineTool({
   execute: async ({ city }) => ({ city, temperatureC: 21 }),
 });
 
+// The runtime connects models and tools.
 const runtime = createRuntime({
   providers: [anthropicProvider()],   // reads ANTHROPIC_API_KEY
-  tools: new ToolRuntime(),           // the only path from model to execute()
+  tools: new ToolRuntime(),
 });
 
+// The agent: model, instructions, tools, permissions.
 const agent = defineAgent({
   name: "weather-assistant",
   model: models.anthropic("claude-opus-5"),
@@ -143,16 +184,28 @@ const agent = defineAgent({
   runtime,
 });
 
+// Run it for a user.
 const result = await agent.run({
   input: "What's the weather in Cairo?",
-  user: { userId: "u-1", tenantId: "acme", permissions: ["weather.read"] },
+  user: { userId: "me", permissions: ["weather.read"] },
 });
 console.log(result.status, result.output);
 ```
 
-To use a local model instead, set `providers: [openAICompatibleProvider({ id: "ollama", baseURL: "http://localhost:11434/v1" })]` and `model: models.local("ollama", "llama3.1:8b")`.
+**5. Run it**
 
-Next: the [getting started guide](./docs/getting-started.md), or copy an [example](#examples).
+```bash
+export ANTHROPIC_API_KEY=your-anthropic-key
+npx tsx agent.ts
+```
+
+You should see `COMPLETED` followed by the answer.
+
+> **No Anthropic key?** Use a free local model. Install [Ollama](https://ollama.com), run `ollama pull llama3.1`, then change two lines in `agent.ts`:
+> `providers: [openAICompatibleProvider({ id: "ollama", baseURL: "http://localhost:11434/v1" })]` (import it from `@agent-farmework/llm`)
+> and `model: models.local("ollama", "llama3.1")`.
+
+**Next steps:** add real tools ([Tools](./docs/tools.md)), give the agent documents ([Knowledge](./docs/knowledge.md)), require approvals for risky actions ([Agents › Human approval](./docs/agents.md#human-approval)), or browse the [examples](#examples). Stuck? See [Troubleshooting](./docs/troubleshooting.md).
 
 ## Core concepts
 
