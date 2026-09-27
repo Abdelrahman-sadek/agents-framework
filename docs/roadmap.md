@@ -22,64 +22,44 @@ Minimal scaffolding only.
 
 ## Phase 1 — Core runtime
 
-In progress.
+**Completed.**
 
-Implemented:
+Delivered:
 
-- agent definition
-- agent runtime
-- agent execution
-- agent state types
-- event system
-- error system
-- configuration primitives
-- basic LLM provider abstraction
+- `defineAgent()`, `createRuntime()`, and the run loop with explicit, serializable `AgentState`
+- typed, sequenced event model with isolated sinks
+- `FrameworkError` hierarchy with codes, categories, retryability and correlation ids
+- provider-independent LLM contract with capability metadata (locality, context window, pricing, latency, data classes)
+- limits: steps, tool calls, tokens, cost, timeout, model retries; cancellation through `AbortSignal`
+- ports: `LLMProvider`, `ToolInvoker`, `RunStateStore`, `ContextManager`, `DecisionEngine`, `Clock`, `IdGenerator`
+- `@agent-framework/core/testing` scripted provider; `@agent-framework/llm` model selectors
 
-Examples and tests:
-
-- `examples/hello-agent` uses the public API
-- unit tests for errors, events, LLM types, run limits
-- integration tests for agent runtime with mock LLM
-
-Quality gates:
-
-- TypeScript compile
-- lint
-- unit tests
-- integration tests
-- example
-
-Phase 1 acceptance criteria:
-
-- a developer can define and run an agent with the public API
-- the runtime emits `AgentStarted`, `LLMCallStarted`, `LLMCallCompleted`, and `AgentCompleted` / failure events
-- the execution has `runId`, `agentId`, timestamps, status, error handling, cancellation support where practical, and configurable limits
+Phase 1 review outcome (Phase 2 prompt §1–8): no vendor, database, queue, telemetry or protocol is imported by the core; the durable-execution boundary is `RunStateStore` + explicit state; decision engine, context, capability metadata, skills and sandbox extension points are in place or documented ([extension points](./architecture/extension-points.md)).
 
 ## Phase 2 — Tool system
 
-Planned.
+**Completed.**
 
-Implement:
+Delivered:
 
-- tool definition
-- schema validation
-- execution
-- permissions
-- timeout
-- retry
-- audit events
+- `defineTool()` with Zod input/output schemas and JSON Schema generation
+- `ToolRuntime`: parse → validate → authorize → approval → rate limit → idempotency → concurrency → execute (timeout, retry, backoff) → validate output → audit
+- deterministic policies (`permissionPolicy`, `allOf`, `policy`, `decisionPolicy`), fail-closed
+- human approval bound to call id and argument hash, with expiry; pause/resume through run state
+- tool lifecycle events, audit records with redaction
+- unit, integration and security tests; `hello-agent` and `approval-agent` examples
+- [ADR 017](./decisions/017-decision-engine.md), [ADR 018](./decisions/018-tool-system.md)
 
-Quality gates:
+Known limitations carried forward:
 
-- TypeScript compile
-- lint
-- unit tests
-- integration tests where applicable
-- example
+- stores (state, audit, idempotency, rate limit) are in-memory only
+- approval "modify" and "escalate" are not implemented
+- no streaming in the run loop; no provider fallback/routing yet
+- HTTP, MCP and sandbox adapters are designed, not built
 
 ## Phase 3 — Structured outputs
 
-Planned.
+**Next.** Basic parse-and-validate already ships with Phase 1; Phase 3 adds the correction loop, JSON Schema response formats, output events and typed failure records.
 
 Implement:
 

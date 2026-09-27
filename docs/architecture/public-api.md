@@ -1,287 +1,73 @@
-# Public API proposal
+# Public API
 
-This is the Version 0 public API proposal. It is intentionally split into a simple common case and composable advanced configuration.
+Version 0.x. Everything exported from a package's `index.ts` is public. Exports marked `@experimental` may change in a minor release. Anything not exported is internal.
 
-## Design goal
+## Simple path
 
-A normal developer should be able to write:
+```ts
+import { createRuntime, defineAgent } from "@agent-framework/core";
+import { models } from "@agent-framework/llm";
+import { ToolRuntime, defineTool } from "@agent-framework/tools";
 
-```typescript
-const agent = defineAgent({
-  name: "research-agent",
-  model,
-  instructions: `You are a research assistant.`,
-  tools: [searchTool],
-  output: ResearchReportSchema,
-});
-
-const result = await agent.run({
-  input: "Research current weather trends",
-});
+const search = defineTool({ name, description, input, output, execute });
+const runtime = createRuntime({ providers: [provider], tools: new ToolRuntime() });
+const agent = defineAgent({ name, model: models.openai("…"), instructions, tools: [search], output, runtime });
+const result = await agent.run({ input: "Research X" });
 ```
 
-Enterprise developers should be able to extend the same surface without making simple cases noisy:
-
-```typescript
-const agent = defineAgent({
-  name: "research-agent",
-
-  model,
-  instructions: `You are a research assistant.`,
-
-  tools: [searchTool],
-
-  output: ResearchReportSchema,
-
-  planning: planning.adaptive(),
-  reflection: reflection.verify(),
-  memory: memory.user(),
-  knowledge: knowledge.base("company-documents"),
-
-  security: {
-    permissions: ["knowledge.read", "database.read"],
-  },
-
-  guardrails: {
-    input: [injectionGuard, piiGuard],
-    output: [restrictedTopicGuard],
-  },
-
-  limits: {
-    maxSteps: 20,
-    maxTokens: 20000,
-    maxCost: 0.50,
-    timeout: "5m",
-  },
-});
-```
-
-## Design rules
-
-- Simple API should not require advanced configuration.
-- Advanced configuration should be composable objects, not a flat super-config.
-- Agent identity and capabilities should be declared, not inferred from prompt content.
-- Output typing should be explicit.
-- Run-time behavior should be overridable per run, but defaults should be declared per agent.
-
-## Core definitions
-
-### defineAgent
-
-```typescript
-declare function defineAgent<TOutput = unknown>(
-  config: DefineAgentConfig<TOutput>
-): Agent<TOutput>;
-```
-
-`DefineAgentConfig`:
-
-```typescript
-interface DefineAgentConfig<TOutput = unknown> {
-  name: string;
-  model: LLMModelSelector;
-  instructions?: string | PromptTemplate;
-  system?: string | PromptTemplate;
-
-  tools?: Tool[];
-  knowledge?: KnowledgeConfig;
-  memory?: MemoryConfig;
-  planning?: PlanningConfig;
-  reflection?: ReflectionConfig;
-
-  security?: SecurityConfig;
-  guardrails?: GuardrailConfig;
-  context?: ContextConfig;
-
-  output?: Schema<TOutput>;
-
-  limits?: RunLimits;
-  execution?: ExecutionConfig;
-  observability?: ObservabilityConfig;
-
-  decisionProvider?: DecisionProvider;
-  contextManager?: ContextManager;
-}
-```
-
-### defineTool
-
-```typescript
-declare function defineTool<TInput, TOutput>(
-  config: DefineToolConfig<TInput, TOutput>
-): Tool<TInput, TOutput>;
-```
-
-`DefineToolConfig`:
-
-```typescript
-interface DefineToolConfig<TInput, TOutput> {
-  name: string;
-  description: string;
-  inputSchema: Schema<TInput>;
-  outputSchema?: Schema<TOutput>;
-
-  execute: ExecuteToolHandler<TInput, TOutput>;
-
-  permissions?: ToolPermissions;
-  timeout?: Duration;
-  retry?: RetryPolicy;
-  idempotencyKey?: IdempotencyStrategy;
-  approvals?: ApprovalConfig;
-}
-```
-
-### defineWorker
-
-Workers are isolated execution participants with limited tools and permissions.
-
-```typescript
-declare function defineWorker<TInput, TOutput>(
-  config: DefineWorkerConfig<TInput, TOutput>
-): Worker<TInput, TOutput>;
-```
-
-Worker configs declare name, instructions, model, tools, limits, and permissions.
-
-### defineOrchestrator
-
-Orchestrators coordinate workers, dependencies, sequencing, parallelism, aggregation, and optional re-planning.
-
-```typescript
-declare function defineOrchestrator(config: DefineOrchestratorConfig): Orchestrator;
-```
-
-### definePlanner
-
-Planners produce structured plans from a task.
-
-```typescript
-declare function definePlanner(config: DefinePlannerConfig): Planner;
-```
-
-Planners are composable and can be swapped per agent.
-
-### defineGuardrail
-
-Guardrails are applied to input or output.
-
-```typescript
-declare function defineGuardrail(config: DefineGuardrailConfig): Guardrail;
-```
-
-Guardrails can be deterministic, schema-based, policy-based, or model-assisted, but deterministic controls remain authoritative where relevant.
-
-### defineEvaluation
-
-```typescript
-declare function defineEvaluation(config: DefineEvaluationConfig): Evaluation;
-```
-
-Evaluations are built from datasets and evaluators.
-
-## Models/provider access
-
-The public API should expose providers through a stable selector/adapter surface rather than raw SDK imports.
-
-For example:
-
-```typescript
-const model = models.openai("gpt-4o");
-const model = models.anthropic("claude-sonnet-4-20250514");
-const model = models.openrouter("...");
-const model = models.custom(myAdapter);
-```
-
-Model selection should support capabilities, fallback, and cost metadata without exposing provider internals in the agent API.
-
-## Output typing
-
-Output schemas are first-class.
-
-```typescript
-const ResearchReportSchema = z.object({
-  summary: z.string(),
-  findings: z.array(z.string()),
-  confidence: z.number().min(0).max(1),
-});
-```
-
-The framework should return typed output after validation and optional correction.
-
-## Run configuration
-
-Run configuration is separate from agent configuration.
-
-```typescript
-interface RunConfig<TInput = unknown> {
-  input: TInput;
-  metadata?: Record<string, unknown>;
-  limits?: RunLimits;
-  contextOverrides?: ContextOverrides;
-  signal?: AbortSignal;
-}
-```
-
-Common run limits:
-
-```typescript
-interface RunLimits {
-  maxSteps?: number;
-  maxToolCalls?: number;
-  maxTokens?: number;
-  maxCost?: number;
-  timeout?: Duration;
-  maxRetries?: number;
-  maxReflectionAttempts?: number;
-}
-```
-
-## Event and error access
-
-Advanced users should be able to observe execution through events and typed errors, but these should not clutter the simple path.
-
-```typescript
-const result = await agent.run(...);
-// result may also expose:
-// - runId
-// - status
-// - steps
-// - events
-// - errors
-// - token usage and estimated cost
-```
-
-## Version 0 scope
-
-Version 0 public API is intentionally limited to:
-
-- agent definition
-- tool definition
-- model selection
-- output schemas
-- run configuration and limits
-- observable events and typed errors
-
-It does **not** require a full implementation of memory, knowledge, planning, reflection, orchestration, security, or evaluation in Phase 1. Those capabilities should integrate into this API when they exist.
-
-Version 0 also reserves:
-
-- `decisionProvider`
-- `contextManager`
-
-for later phases, so deterministic decisioning and advanced context management can be added without changing the simple API.
-
-## Non-goals for Version 0
-
-- Full multi-agent orchestration
-- Full persistence layer
-- Full security/authorization runtime
-- Full evaluation platform
-- Full production queue/durable execution backend
-
-These can be added later behind the same API shapes where appropriate.
-
-## Naming stability
-
-- The public API names above are preferred, but exact names may still be refined during Phase 1 implementation.
-- Any breaking public API change after freeze should go through an ADR.
+## `@agent-framework/core`
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `defineAgent(config)` | function | Validate and freeze an agent definition |
+| `Agent`, `AgentConfig`, `RunOptions`, `ResumeOptions`, `AgentRunResult` | types | Agent surface |
+| `createRuntime(options)`, `RuntimeOptions`, `AgentRuntime` | function / types | Explicit runtime composition |
+| `FrameworkError` and subclasses, `SerializedError`, `ErrorCategory`, `isRetryable` | classes / types | [Error model](./errors.md) |
+| `AgentEvent`, `AgentEventType`, `AgentEventPayloads`, `EventSink`, `EmitFn`, `InMemoryEventSink`, `noopEmit` | types / classes | [Event model](./events.md) |
+| `LLMProvider`, `LLMRequest`, `LLMResponse`, `LLMMessage`, `LLMToolCall`, `LLMToolDefinition`, `LLMStreamEvent`, `ModelCapabilities`, `ModelPricing`, `LLMModelSelector`, `estimateCostUsd` | types / function | Provider contract |
+| `AgentTool`, `ToolInvoker`, `ToolInvocation`, `ToolInvocationResult`, `ApprovalRequest`, `ApprovalDecision` | types | Tool port |
+| `Principal`, `AgentIdentity`, `RunIdentity`, `hasPermission` | types / function | Identity |
+| `Schema`, `InferSchema`, `JsonSchema` | types | Validator-agnostic schema contract |
+| `AgentState`, `AgentStatus`, `ExecutionStep`, `UsageTotals`, `RunLimits`, `DEFAULT_RUN_LIMITS`, `resolveLimits`, `validateLimits` | types / values | State and limits |
+| `RunStateStore`, `InMemoryRunStateStore` | type / class | Persistence port |
+| `ContextManager`, `passthroughContext` | type / value | Context port |
+| `DecisionEngine`, `DecisionProvider`, `createDecisionEngine`, `ruleDecisionProvider` | types / functions | Decision port |
+| `Clock`, `IdGenerator`, `systemClock`, `randomIds`, `sequentialIds` | types / values | Determinism |
+| `raceAbort`, `sleep` | functions | Cancellation helpers for adapters |
+
+`@agent-framework/core/testing`: `createScriptedProvider(steps, options)`, for tests only.
+
+## `@agent-framework/tools`
+
+| Export | Purpose |
+| --- | --- |
+| `defineTool(config)`, `Tool`, `AnyTool`, `ToolConfig`, `ToolContext`, `isTool` | Tool definition |
+| `ToolRetryPolicy`, `ToolRateLimit`, `ToolIdempotency`, `ToolApproval`, `ToolKind` | Tool options |
+| `ToolRuntime`, `ToolRuntimeOptions`, `ExecuteToolOptions`, `ToolExecutionResult`, `hashArguments` | Execution pipeline |
+| `permissionPolicy`, `allOf`, `policy`, `decisionPolicy`, `ToolPolicy`, `ToolAuthorizationRequest`, `ToolAuthorizationDecision` | Authorization |
+| `AuditSink`, `ToolAuditRecord`, `InMemoryAuditLog` | Audit |
+| `IdempotencyStore`, `InMemoryIdempotencyStore`, `RateLimiter`, `InMemoryRateLimiter` | Reliability stores |
+
+## `@agent-framework/llm`
+
+| Export | Purpose |
+| --- | --- |
+| `models.openai / anthropic / gemini / openrouter / local / custom` | Serializable model selectors |
+| `withFallbacks(primary, …fallbacks)` | `@experimental`: stored, not yet acted on |
+
+## Configuration levels
+
+| Level | Where | Examples |
+| --- | --- | --- |
+| Framework | `createRuntime()`, `new ToolRuntime()` | providers, sinks, stores, policy, default limits |
+| Agent | `defineAgent()`, `defineTool()` | model, instructions, tools, permissions, limits, tool timeouts |
+| Run | `agent.run()` | input, user, run id, metadata, limit overrides, signal |
+
+See [Configuration](./configuration.md).
+
+## Changes from the Phase 1 draft
+
+- `DefaultAgentRuntime` class → `createRuntime()` factory. `agent.run()` works when the agent is bound to a runtime.
+- `defineTool({ inputSchema, outputSchema, timeout })` → `defineTool({ input, output, timeoutMs })`.
+- `Tool` permissions are a list of required permission strings, not allow/deny lists. Allow/deny logic belongs in policies.
+- Events renamed (`LLMCALL_*` → `LLM_CALL_*`, `TOOLCALL_*` → `TOOL_*`) and wrapped in envelopes.

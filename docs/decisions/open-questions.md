@@ -1,6 +1,6 @@
 # Open decisions and risks
 
-This document tracks unresolved decisions and architectural risks visible after Phase 0 and early Phase 1.
+This document tracks unresolved decisions and architectural risks visible after Phase 2.
 
 ## Open decisions
 
@@ -50,7 +50,19 @@ Status: framework support required; examples may start simpler.
 
 The current package set is intentionally modest. If Phase 1 implementation reveals a better split, boundaries may be adjusted before later phases.
 
-Status: stable for now; allow refinement.
+Status: Phase 1–2 kept the 11-package layout. One refinement: the LLM provider contract lives in `core` and `llm` holds selectors and future gateway features ([ADR 018](./018-tool-system.md)). Unimplemented packages are private placeholders.
+
+### Approval modification and escalation
+
+Approving with modified arguments, and escalating to another reviewer, are part of the target lifecycle but not implemented. A modified action must currently be a new tool call.
+
+Status: open; revisit with the durable approval store (Phase 14) or security phase (Phase 11).
+
+### Shared stores for multi-instance deployments
+
+Idempotency, rate-limit and audit stores ship as in-memory implementations. Multi-instance deployments need shared adapters (PostgreSQL/Redis).
+
+Status: interfaces stable; adapters planned for Phase 14.
 
 ## Risks
 
@@ -116,8 +128,7 @@ Mitigation: keep core contracts clean and treat adapter-specific behavior as ada
 
 ## Recommendations for next steps
 
-- Keep Phase 1 core runtime narrow and validated by tests and the hello example.
-- Finalize package identity after availability checks.
-- Expand the public API proposal only when a later phase needs it.
-- Continue security and telemetry review from the first implementation phase onward.
-- Begin Phase 2 with the tool system once Phase 1 quality gates are met.
+- Start Phase 3 (structured output correction loop) on top of the existing output validation.
+- Build the first real provider adapter (an OpenAI-compatible adapter covers many cloud and local servers).
+- Finalize package identity after availability checks, then publish 0.x.
+- Keep security review in every phase; add guardrail tests alongside Phase 11 work.

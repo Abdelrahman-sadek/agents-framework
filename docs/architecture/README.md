@@ -102,6 +102,8 @@ Result validation
 Audit
 ```
 
+**Implemented in Phase 2** (`@agent-framework/tools`). The concrete pipeline is parse → validate input → authorize → approval → rate limit → idempotency → concurrency → execute (timeout, retry) → validate output → audit. Guardrails plug in at the authorization step as `ToolPolicy`s until the Phase 11 guardrail engine arrives. See the [Tools guide](../tools.md) and [ADR 018](../decisions/018-tool-system.md).
+
 ### 4.3 Context Engine
 
 Context is not "send everything to the model". The context engine selects, prioritizes, budgets, summarizes, and assembles context from:
@@ -285,6 +287,8 @@ COMPLETED
 ```
 
 Tool execution can also fail with timeout, rejection, or error states.
+
+As implemented, these states are observable as events: `TOOL_REQUESTED` → `TOOL_AUTHORIZATION_STARTED/COMPLETED` → optional `TOOL_APPROVAL_*` → `TOOL_EXECUTION_STARTED` → `TOOL_EXECUTION_COMPLETED | FAILED | TIMED_OUT`. See [Events](./events.md).
 
 ### 7.3 Planning lifecycle
 

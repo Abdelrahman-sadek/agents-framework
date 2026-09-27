@@ -1,138 +1,60 @@
-# Error architecture
+# Errors
 
-Errors must be consistent, inspectable, retry-aware, and correlated with execution. They should separate developer mistakes from runtime failures from provider/tool/infrastructure failures.
+All runtime errors are `FrameworkError`s:
 
-## Error contract
-
-Framework errors should expose:
-
-```typescript
-interface FrameworkError {
-  code: string;
-  message: string;
-  cause?: unknown;
+```ts
+class FrameworkError extends Error {
+  code: string;                 // stable, machine-readable
+  category: ErrorCategory;      // developer | validation | provider | tool | authorization | execution | infrastructure | policy
   retryable: boolean;
-  metadata?: Record<string, unknown>;
-  runId?: string;
-  stepId?: string;
-  toolCallId?: string;
-  llmCallId?: string;
+  metadata: Record<string, unknown>;
+  runId?: string; stepId?: string; toolCallId?: string; llmCallId?: string;
+  cause?: unknown;              // kept in-process, never serialized
+  toJSON(): SerializedError;
 }
 ```
 
-## Error categories
+Errors are serialized with `toJSON()` before they reach a result, an event, persisted state or a model message, so causes and stacks don't leak. `FrameworkError.from(value, fallback)` normalizes anything thrown.
 
-### Developer errors
+## Codes
 
-Errors caused by incorrect use of the framework, such as invalid configuration or invalid agent definition.
+| Class | Code | Category | Retryable |
+| --- | --- | --- | --- |
+| `ConfigurationError` | `CONFIGURATION_ERROR` | developer | never |
+| `ValidationError` | `VALIDATION_ERROR` | validation | no (option) |
+| `OutputValidationError` | `OUTPUT_VALIDATION_ERROR` | validation | no (option) |
+| `LLMError` | `LLM_ERROR` | provider | option |
+| `ToolError` | `TOOL_ERROR` | tool | option |
+| `ToolTimeoutError` | `TOOL_TIMEOUT` | tool | no (see `retryOnTimeout`) |
+| — | `TOOL_OUTPUT_INVALID` | tool | no |
+| `ToolNotFoundError` | `TOOL_NOT_FOUND` | validation | never |
+| `AuthorizationError` | `AUTHORIZATION_ERROR` | authorization | never |
+| `ToolAuthorizationError` | `TOOL_AUTHORIZATION_ERROR` | authorization | never |
+| `ApprovalRequiredError` | `APPROVAL_REQUIRED` | policy | never |
+| `ApprovalRejectedError` | `APPROVAL_REJECTED` | policy | never |
+| `ApprovalExpiredError` | `APPROVAL_EXPIRED` | policy | never |
+| `RateLimitError` | `RATE_LIMITED` | policy | yes (default) |
+| `LimitExceededError` | `LIMIT_EXCEEDED` | policy | never |
+| `PolicyViolationError` | `POLICY_VIOLATION` | policy | never |
+| `CancellationError` | `CANCELLED` | execution | never |
+| `RunTimeoutError` | `RUN_TIMEOUT` | execution | never |
+| `AgentError` | `AGENT_ERROR` | execution | option |
+| `ExecutionError` | `EXECUTION_ERROR` | execution | option |
+| `InfrastructureError` | `INFRASTRUCTURE_ERROR` | infrastructure | yes (default) |
+| `ContextLimitError`, `MemoryError`, `KnowledgeError`, `PlanningError` | reserved | — | option |
 
-- should be clear
-- usually not retryable
-- often detected early
+"option" means the thrower decides with `{ retryable }`. "never" classes ignore the option.
 
-### Validation errors
+## Where errors surface
 
-Errors from schema or output validation failures.
+| Situation | Surface |
+| --- | --- |
+| Developer mistake (bad config, unknown provider, missing tool runtime, duplicate run id) | **thrown** from `defineAgent`, `createRuntime`, `run`, `resume` |
+| Run-level failure (provider error after retries, limits, output validation, cancellation, timeout) | `result.status` + `result.error` |
+| Tool-level failure (invalid args, denial, timeout, tool error, rejection) | failed `ExecutionStep` + tool message to the model; the run continues |
 
-- often retryable in the sense that the framework may re-attempt structured output or correction
-- should record what failed validation
+## Retry rules
 
-### Provider errors
-
-Errors from LLM providers or embedding providers.
-
-- may be retryable
-- should be normalized
-- should include provider, model, and outcome metadata where useful
-
-### Tool errors
-
-Errors from tool execution.
-
-- may reflect timeout, failure, rejection, authorization, or approval gating
-- should distinguish internal tool failure from blocked action
-
-### Authorization errors
-
-Errors from permission or policy denial.
-
-- not retryable by retrying the same request
-- should be explicit about what was denied
-
-### Execution errors
-
-Errors from the runtime itself, such as step failure, cancellation, timeout, or budget exceeded.
-
-- should include run context
-- should distinguish transient failure from terminal failure
-
-### Infrastructure errors
-
-Errors from persistence, queues, or external systems the framework depends on.
-
-- may be retryable
-- should be separable from logical failures
-
-### Policy violations
-
-Guardrail blocks and policy denials.
-
-- should be explicit and auditable
-- should not rely on the LLM asserting whether something is allowed
-
-## Error hierarchy
-
-The framework should have a small, clear error taxonomy, for example:
-
-- `FrameworkError`
-  - `AgentError`
-  - `ToolError`
-  - `LLMError`
-  - `ValidationError`
-  - `AuthorizationError`
-  - `ContextLimitError`
-  - `MemoryError`
-  - `KnowledgeError`
-  - `PlanningError`
-  - `ExecutionError`
-  - `ApprovalRequiredError`
-  - `PolicyViolationError`
-  - `InfrastructureError`
-
-The exact hierarchy can be refined during Phase 1, but the separation of concerns should remain.
-
-## Retry semantics
-
-Retryability should be explicit, not implied.
-
-- Some errors are transient and retryable.
-- Some are terminal.
-- Some require human intervention.
-- Some require configuration correction.
-
-The runtime should not blindly retry everything.
-
-## Error metadata
-
-Useful metadata includes:
-
-- error code
-- provider or tool name
-- model where relevant
-- retry count
-- timeout
-- budget used
-- relevant ids
-
-Error metadata should not include sensitive data unless explicitly required and sanitized.
-
-## Correlation
-
-Every non-trivial error should be traceable to:
-
-- runId
-- agentId
-- stepId where applicable
-- toolCallId or llmCallId where applicable
-
-This is essential for debugging and audit.
+- Model calls: `retryable` errors are retried up to `maxLLMRetries` with exponential backoff.
+- Tool calls: `retryable` errors are retried up to `retry.maxAttempts`. Plain exceptions are wrapped as non-retryable `TOOL_ERROR`.
+- Cancellation, timeouts, authorization and validation errors are never retried.
