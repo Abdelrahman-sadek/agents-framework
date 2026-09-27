@@ -1,4 +1,4 @@
-import { ToolRuntime, type AnyTool } from "@agent-framework/tools";
+import { ToolRuntime, type AnyTool } from "@agent-farmework/tools";
 import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

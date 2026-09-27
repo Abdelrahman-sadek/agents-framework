@@ -1,6 +1,6 @@
-import { InMemoryRunStateStore, createRuntime, defineAgent, sequentialIds, type AgentState } from "@agent-framework/core";
-import { createScriptedProvider, type ScriptedStep } from "@agent-framework/core/testing";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { InMemoryRunStateStore, createRuntime, defineAgent, sequentialIds, type AgentState } from "@agent-farmework/core";
+import { createScriptedProvider, type ScriptedStep } from "@agent-farmework/core/testing";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { describe, expect, test, vi } from "vitest";
 
 /** node:sqlite ships with Node ≥ 22.5; SQLite-backed tests are skipped on older runtimes. */

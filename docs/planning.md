@@ -1,6 +1,6 @@
 # Planning
 
-`@agent-framework/orchestration`
+`@agent-farmework/orchestration`
 
 A plan is data, not a prompt:
 

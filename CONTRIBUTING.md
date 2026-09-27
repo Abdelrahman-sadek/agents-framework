@@ -23,7 +23,7 @@ Tests and examples import packages from `src/` through path aliases, so no build
 ## Ground rules
 
 1. **The runtime stays deterministic.** Authorization, limits, retries, persistence and audit are never delegated to a model.
-2. **No vendor in the core.** `@agent-framework/core` must not import an LLM SDK, database driver, queue, OpenTelemetry or MCP. These are adapters.
+2. **No vendor in the core.** `@agent-farmework/core` must not import an LLM SDK, database driver, queue, OpenTelemetry or MCP. These are adapters.
 3. **No globals.** Dependencies flow through `createRuntime()` / `ToolRuntime` options.
 4. **No `any`** unless unavoidable. If you need it, add a comment explaining why.
 5. **Every behaviour change has a test.** Security-relevant changes get a test in a `security.test.ts` that names the attack.
@@ -37,6 +37,12 @@ Changes to a public contract (`Agent`, `LLMProvider`, `ToolInvoker`, `RunStateSt
 ## API stability
 
 Everything exported from a package's `index.ts` is public API and follows semantic versioning once 1.0 ships. Exports marked `@experimental` may change in minor releases. Anything not exported is internal.
+
+## Releasing
+
+1. Bump `version` in the changed `packages/*/package.json` files and move the **Unreleased** changelog entries under the new version.
+2. Merge to `main`, then push a tag: `git tag v0.2.0 && git push origin v0.2.0`.
+3. The Release workflow runs `pnpm check`, builds, and publishes every package to GitHub Packages with the built-in `GITHUB_TOKEN`. It can also be started manually from the Actions tab.
 
 ## Pull requests
 

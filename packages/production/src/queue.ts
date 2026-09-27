@@ -1,4 +1,4 @@
-import type { ApprovalDecision, Principal } from "@agent-framework/core";
+import type { ApprovalDecision, Principal } from "@agent-farmework/core";
 import { tableName, type SqlClient, type SqliteDatabase } from "./sql.js";
 
 /** Serializable work item. Jobs reference runs; run state lives in the RunStateStore. */

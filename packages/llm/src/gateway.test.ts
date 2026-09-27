@@ -1,5 +1,5 @@
-import { LLMError, ValidationError, createRuntime, defineAgent } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
+import { LLMError, ValidationError, createRuntime, defineAgent } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
 import { describe, expect, test, vi } from "vitest";
 import { withCircuitBreaker, withFallback, withRateLimit } from "./gateway.js";
 import { openAICompatibleProvider } from "./openai-compatible.js";

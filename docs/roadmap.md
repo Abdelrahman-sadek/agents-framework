@@ -34,11 +34,11 @@ The framework was built one phase at a time. Every phase ships with typecheck, l
 | MCP adapter | ✅ | [mcp](./mcp.md) |
 | Sandbox tools | ✅ | [sandbox](./sandbox.md) |
 | Run dashboard | ✅ | [observability › dashboard](./observability.md#dashboard) |
-| Release workflow | ✅ | `.github/workflows/release.yml` |
+| Release workflow (GitHub Packages) | ✅ | `.github/workflows/release.yml` |
 
 ## Next
 
-- **Publish 0.x:** choose the npm scope ([ADR 014](./decisions/014-package-identity.md)), add the `NPM_TOKEN` secret and push a `v0.1.0` tag.
+- **Mirror to npmjs.com:** packages are published to GitHub Packages; add npmjs.com once an account is available ([ADR 014](./decisions/014-package-identity.md)).
 - **Container `SandboxRunner`:** Docker or microVM runner with no network, a read-only root and quotas.
 - **Temporal worker:** Temporal activities that call `run`, `resume` and `recover` ([ADR 013](./decisions/013-temporal-durable-execution.md)).
 - **Native Gemini adapter:** Gemini already works through its OpenAI-compatible endpoint.

@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/production",
+  "name": "@agent-farmework/production",
   "version": "0.1.0",
   "description": "Production runtime: durable run state (PostgreSQL, SQLite), durable job queue, workers with leases, recovery and graceful shutdown, agent service API, health checks, validated framework configuration",
   "license": "Apache-2.0",
@@ -23,19 +23,32 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
-    "@agent-framework/tools": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
+    "@agent-farmework/tools": "workspace:*",
     "zod": "^4.1.0",
-    "@agent-framework/knowledge": "workspace:*",
-    "@agent-framework/memory": "workspace:*"
+    "@agent-farmework/knowledge": "workspace:*",
+    "@agent-farmework/memory": "workspace:*"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/production"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
-  }
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "ai-agents",
+    "llm",
+    "typescript",
+    "agent-framework",
+    "postgresql",
+    "pgvector",
+    "redis",
+    "durable-execution"
+  ]
 }

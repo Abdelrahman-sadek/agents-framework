@@ -1,5 +1,5 @@
 /**
- * @agent-framework/context — the context engine.
+ * @agent-farmework/context — the context engine.
  *
  * Available information → relevance → priority → token budget → final model context.
  */

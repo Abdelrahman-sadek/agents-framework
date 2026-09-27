@@ -1,5 +1,5 @@
 /**
- * @agent-framework/sandbox — controlled execution capabilities.
+ * @agent-farmework/sandbox — controlled execution capabilities.
  *
  * A model never gets raw OS authority. It gets narrow tools:
  * - workspace tools confined to one directory (symlink- and traversal-safe),
@@ -12,8 +12,8 @@
 import { execFile } from "node:child_process";
 import { mkdir, readdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { PolicyViolationError, ToolError } from "@agent-framework/core";
-import { defineTool, type AnyTool } from "@agent-framework/tools";
+import { PolicyViolationError, ToolError } from "@agent-farmework/core";
+import { defineTool, type AnyTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 // ------------------------------------------------------------------ workspace

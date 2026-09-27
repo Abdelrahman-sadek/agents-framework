@@ -7,8 +7,8 @@ import {
   type Guardrail,
   type RunLimits,
   type Verifier,
-} from "@agent-framework/core";
-import type { AnyTool } from "@agent-framework/tools";
+} from "@agent-farmework/core";
+import type { AnyTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 /**

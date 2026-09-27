@@ -22,7 +22,7 @@ export interface Skill {
   readonly verifiers?: readonly Verifier[];
   readonly dependsOn?: readonly Skill[];
   readonly examples?: readonly { input: string; output: string }[];
-  /** Cases the skill must pass (consumed by `skillDataset` in @agent-framework/evaluation). */
+  /** Cases the skill must pass (consumed by `skillDataset` in @agent-farmework/evaluation). */
   readonly evaluation?: { readonly cases: readonly { id: string; input: unknown; expected?: unknown }[]; readonly minPassRate?: number };
 }
 

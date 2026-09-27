@@ -1,7 +1,7 @@
 /**
  * Test utilities: a scripted, deterministic LLM provider.
  *
- * Import from `@agent-framework/core/testing`. Not intended for production.
+ * Import from `@agent-farmework/core/testing`. Not intended for production.
  */
 import { LLMError } from "./errors.js";
 import type { LLMProvider, LLMRequest, LLMResponse, LLMStreamEvent, LLMToolCall, LLMTokenUsage, ModelCapabilities } from "./llm.js";

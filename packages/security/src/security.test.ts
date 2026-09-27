@@ -1,6 +1,6 @@
-import { createRuntime, defineAgent, type AgentIdentity } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime, allOf, defineTool, permissionPolicy } from "@agent-framework/tools";
+import { createRuntime, defineAgent, type AgentIdentity } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime, allOf, defineTool, permissionPolicy } from "@agent-farmework/tools";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { createEgressPolicy, isPrivateAddress, safeFetch } from "./egress.js";

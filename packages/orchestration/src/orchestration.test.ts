@@ -1,6 +1,6 @@
-import { ExecutionError, InMemoryEventSink, createRuntime, defineAgent, ruleVerifier, sequentialIds } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { ToolRuntime } from "@agent-framework/tools";
+import { ExecutionError, InMemoryEventSink, createRuntime, defineAgent, ruleVerifier, sequentialIds } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { ToolRuntime } from "@agent-farmework/tools";
 import { describe, expect, test, vi } from "vitest";
 import { agentAsTool, agentVerifier, runParallel, runPipeline, supervisor } from "./multi-agent.js";
 import { defineOrchestrator } from "./orchestrator.js";

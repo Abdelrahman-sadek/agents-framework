@@ -1,5 +1,5 @@
 /**
- * @agent-framework/orchestration — planning, orchestration and multi-agent patterns.
+ * @agent-farmework/orchestration — planning, orchestration and multi-agent patterns.
  *
  * Multi-agent is optional. Prefer a single agent with good tools; reach for an
  * orchestrator when work decomposes into independent, verifiable steps.

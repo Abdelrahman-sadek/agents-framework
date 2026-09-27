@@ -1,4 +1,4 @@
-import type { Principal } from "@agent-framework/core";
+import type { Principal } from "@agent-farmework/core";
 
 /**
  * Secret management port. Vault, AWS/GCP/Azure secret managers are adapters.

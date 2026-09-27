@@ -1,13 +1,13 @@
 # MCP (Model Context Protocol)
 
-`@agent-framework/mcp` turns an MCP server's tools into ordinary framework tools. MCP is an adapter, not the internal tool model ([ADR 010](./decisions/010-mcp-integration.md)). Every MCP call goes through the `ToolRuntime` like any other tool:
+`@agent-farmework/mcp` turns an MCP server's tools into ordinary framework tools. MCP is an adapter, not the internal tool model ([ADR 010](./decisions/010-mcp-integration.md)). Every MCP call goes through the `ToolRuntime` like any other tool:
 
 - JSON Schema validation (converted with `z.fromJSONSchema`);
 - permissions (default `mcp.<server>`) and approval rules;
 - rate limits, idempotency and audit.
 
 ```ts
-import { connectStdioServer, connectHttpServer, mcpTools } from "@agent-framework/mcp";
+import { connectStdioServer, connectHttpServer, mcpTools } from "@agent-farmework/mcp";
 
 const { client, close } = await connectStdioServer({ command: "npx", args: ["-y", "@acme/crm-mcp"] });
 // or: await connectHttpServer({ url: "https://mcp.acme.example/mcp", headers: { authorization: `Bearer ${token}` } });

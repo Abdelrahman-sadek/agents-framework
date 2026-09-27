@@ -1,5 +1,5 @@
 /**
- * @agent-framework/provider-anthropic — Claude models through the official Anthropic SDK.
+ * @agent-farmework/provider-anthropic — Claude models through the official Anthropic SDK.
  *
  * The only package in the repository that imports a vendor SDK; the core and
  * every other package stay provider-independent.
@@ -16,7 +16,7 @@ import {
   type LLMStreamEvent,
   type ModelCapabilities,
   type ModelPricing,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 
 type Caps = Omit<ModelCapabilities, "providerId" | "modelId">;
 

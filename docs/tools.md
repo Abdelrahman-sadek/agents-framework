@@ -19,7 +19,7 @@ model requests tool
 ## Define a tool
 
 ```ts
-import { defineTool } from "@agent-framework/tools";
+import { defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 export const searchTool = defineTool({
@@ -83,7 +83,7 @@ A privileged agent can't lend its rights to a user, and a privileged user can't 
 ### Custom policies
 
 ```ts
-import { allOf, permissionPolicy, policy } from "@agent-framework/tools";
+import { allOf, permissionPolicy, policy } from "@agent-farmework/tools";
 
 const sameTenant = policy("tenant-isolation", ({ user, input }) => ({
   allowed: user !== undefined && (input as { tenantId?: string }).tenantId === user.tenantId,

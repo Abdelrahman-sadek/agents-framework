@@ -8,7 +8,7 @@ Routing, classification, ranking, verification, guard decisions, prompt-injectio
 
 **Decision**
 
-Add a `DecisionEngine` / `DecisionProvider` abstraction to `@agent-framework/core`:
+Add a `DecisionEngine` / `DecisionProvider` abstraction to `@agent-farmework/core`:
 
 - providers declare `deterministic` and which `DecisionKind`s they support;
 - the engine combines providers with deny-overrides and fails closed when a provider throws;

@@ -4,8 +4,22 @@ This guide takes you from a clone to a running agent that calls a tool.
 
 ## 1. Install
 
+As a dependency, from GitHub Packages:
+
 ```bash
-git clone https://github.com/Abdelrahman-sadek/agents-framework.git
+# .npmrc (needs a GitHub token with read:packages)
+@agent-farmework:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+```bash
+npm install @agent-farmework/core @agent-farmework/tools @agent-farmework/llm zod
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/agent-farmework/agents-framework.git
 cd agents-framework
 corepack enable
 pnpm install
@@ -21,14 +35,14 @@ pnpm example:hello      # User → Agent → Tool → Answer
 pnpm example:approval   # Agent → Proposed action → Human approval → Tool
 ```
 
-Both use a scripted model (`@agent-framework/core/testing`), so they run offline and always give the same output.
+Both use a scripted model (`@agent-farmework/core/testing`), so they run offline and always give the same output.
 
 ## 3. Build your first agent
 
 ```ts
-import { createRuntime, defineAgent } from "@agent-framework/core";
-import { models } from "@agent-framework/llm";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { models } from "@agent-farmework/llm";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 // A tool: typed, validated, permission-gated.
@@ -71,7 +85,7 @@ console.log(result.status, result.output);
 The framework ships no vendor SDKs. A provider is a small adapter implementing `LLMProvider`:
 
 ```ts
-import type { LLMProvider } from "@agent-framework/core";
+import type { LLMProvider } from "@agent-farmework/core";
 
 export const myProvider: LLMProvider = {
   id: "openai", // matches models.openai(...).providerId
@@ -87,12 +101,12 @@ export const myProvider: LLMProvider = {
 };
 ```
 
-Ready-made adapters: `anthropicProvider()` from `@agent-framework/provider-anthropic` (official SDK) and `openAICompatibleProvider({ id, baseURL, apiKey })` from `@agent-framework/llm` (OpenAI, OpenRouter, vLLM, Ollama, LM Studio). See [Models and providers](./models.md), and [Core runtime › LLM providers](./architecture/core-runtime.md#llm-providers) for the contract.
+Ready-made adapters: `anthropicProvider()` from `@agent-farmework/provider-anthropic` (official SDK) and `openAICompatibleProvider({ id, baseURL, apiKey })` from `@agent-farmework/llm` (OpenAI, OpenRouter, vLLM, Ollama, LM Studio). See [Models and providers](./models.md), and [Core runtime › LLM providers](./architecture/core-runtime.md#llm-providers) for the contract.
 
 ## 5. Observe what happened
 
 ```ts
-import { InMemoryEventSink } from "@agent-framework/core";
+import { InMemoryEventSink } from "@agent-farmework/core";
 
 const events = new InMemoryEventSink();
 const runtime = createRuntime({ providers: [myProvider], tools: new ToolRuntime(), events });
@@ -105,7 +119,7 @@ Tool calls are also written to the tool runtime's audit sink (`new ToolRuntime({
 ## Next
 
 - [Examples](./examples/README.md): research, RAG, orchestrator, approval and enterprise agents.
-- `pnpm --filter @agent-framework/cli build && npx agent create my-agent` scaffolds a new agent ([CLI](./cli.md)).
+- `pnpm --filter @agent-farmework/cli build && npx agent create my-agent` scaffolds a new agent ([CLI](./cli.md)).
 
 - [Agents guide](./agents.md): limits, cancellation, structured output, approvals, state.
 - [Tools guide](./tools.md): permissions, approval, retries, idempotency, rate limits, audit.

@@ -3,11 +3,11 @@
  *
  *   pnpm example:rag
  */
-import { citationVerifier, createRuntime, defineAgent, InMemoryEventSink } from "@agent-framework/core";
-import { createRuleProvider } from "@agent-framework/core/testing";
-import { createKnowledgeBase, hashingEmbedder } from "@agent-framework/knowledge";
-import { models } from "@agent-framework/llm";
-import { piiGuardrail, promptInjectionGuardrail } from "@agent-framework/security";
+import { citationVerifier, createRuntime, defineAgent, InMemoryEventSink } from "@agent-farmework/core";
+import { createRuleProvider } from "@agent-farmework/core/testing";
+import { createKnowledgeBase, hashingEmbedder } from "@agent-farmework/knowledge";
+import { models } from "@agent-farmework/llm";
+import { piiGuardrail, promptInjectionGuardrail } from "@agent-farmework/security";
 
 // 1. Ingest documents (chunking, metadata, embeddings). Tenant documents stay inside their tenant.
 const handbook = createKnowledgeBase({ name: "handbook", embedder: hashingEmbedder() });

@@ -1,4 +1,4 @@
-import { LLMError, type LLMProvider, type LLMRequest, type ModelCapabilities } from "@agent-framework/core";
+import { LLMError, type LLMProvider, type LLMRequest, type ModelCapabilities } from "@agent-farmework/core";
 
 export interface RouteCandidate {
   provider: LLMProvider;

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { createRuntime, defineAgent, LLMError, RateLimitError } from "@agent-framework/core";
+import { createRuntime, defineAgent, LLMError, RateLimitError } from "@agent-farmework/core";
 import { describe, expect, test, vi } from "vitest";
 import { anthropicProvider, normalizeAnthropicError, toAnthropicMessages } from "./index.js";
 

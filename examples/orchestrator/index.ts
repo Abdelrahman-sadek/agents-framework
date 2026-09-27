@@ -8,11 +8,11 @@
  *
  *   pnpm example:orchestrator
  */
-import { createRuntime, defineAgent, InMemoryEventSink } from "@agent-framework/core";
-import { createRuleProvider } from "@agent-framework/core/testing";
-import { models } from "@agent-framework/llm";
-import { defineOrchestrator, defineWorker, staticPlanner } from "@agent-framework/orchestration";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createRuntime, defineAgent, InMemoryEventSink } from "@agent-farmework/core";
+import { createRuleProvider } from "@agent-farmework/core/testing";
+import { models } from "@agent-farmework/llm";
+import { defineOrchestrator, defineWorker, staticPlanner } from "@agent-farmework/orchestration";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 // Each worker is an agent with its own, narrow tools and permissions.

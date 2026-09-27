@@ -8,7 +8,7 @@ Input → input guardrails → agent → tool results → tool_result guardrails
 ```
 
 ```ts
-import { piiGuardrail, promptInjectionGuardrail, secretLeakGuardrail, contentPolicyGuardrail, maxLengthGuardrail } from "@agent-framework/security";
+import { piiGuardrail, promptInjectionGuardrail, secretLeakGuardrail, contentPolicyGuardrail, maxLengthGuardrail } from "@agent-farmework/security";
 
 defineAgent({
   ...,

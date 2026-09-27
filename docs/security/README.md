@@ -183,17 +183,17 @@ Controls:
 | Sensitive inputs redacted from audit; events carry no arguments/outputs | `sensitive`, event design | `security.test.ts` |
 | Audit record for every tool invocation, including denials | `AuditSink` | `tool-runtime.test.ts` |
 
-| Input, tool-result and output guardrails (PII, prompt injection, secrets, content, length), fail closed | core runtime + `@agent-framework/security` | `runtime-extensions.test.ts`, `security` package tests |
-| RBAC with nested roles, ABAC rules, tenant isolation on arguments, data classification vs. clearance | `@agent-framework/security` policies | `security.test.ts` |
+| Input, tool-result and output guardrails (PII, prompt injection, secrets, content, length), fail closed | core runtime + `@agent-farmework/security` | `runtime-extensions.test.ts`, `security` package tests |
+| RBAC with nested roles, ABAC rules, tenant isolation on arguments, data classification vs. clearance | `@agent-farmework/security` policies | `security.test.ts` |
 | SSRF-safe egress: allow-list, https only, private/metadata address blocking after DNS, per-hop redirect checks, size/time caps | `createEgressPolicy`, `safeFetch`, `defineHttpTool` | `security.test.ts` |
 | Secrets resolved inside tool execution only | `SecretProvider`, `envSecrets` | `security.test.ts` |
-| Tenant-scoped knowledge and memory, memory write policy and ownership | `@agent-framework/knowledge`, `@agent-framework/memory` | package tests |
+| Tenant-scoped knowledge and memory, memory write policy and ownership | `@agent-farmework/knowledge`, `@agent-farmework/memory` | package tests |
 | Bounded delegation depth; delegates act for the same user | `agentAsTool` | `orchestration.test.ts` |
 | Telemetry redaction; spans carry no content | `redactingSink`, `openTelemetrySink` | `observability.test.ts` |
 | Production config refuses in-memory audit/state and missing budgets | `createFramework` | `production.test.ts` |
-| Workspace confinement (absolute paths, traversal, symlink escapes) and approval-gated writes | `@agent-framework/sandbox` | `sandbox.test.ts` |
+| Workspace confinement (absolute paths, traversal, symlink escapes) and approval-gated writes | `@agent-farmework/sandbox` | `sandbox.test.ts` |
 | Commands: no shell, allow-listed subcommands and flags, scrubbed env, time/output caps, approval | `commandTool` | `sandbox.test.ts` |
-| MCP tools validated locally and authorized per server | `@agent-framework/mcp` | `mcp.test.ts` |
+| MCP tools validated locally and authorized per server | `@agent-farmework/mcp` | `mcp.test.ts` |
 | Approval modifications re-validated and re-authorized; escalation cannot execute | tool runtime | `agent-tools.integration.test.ts` |
 | Dashboard binds to localhost, is read-only and renders data as text | `createDashboardServer` | `observability.test.ts` |
 

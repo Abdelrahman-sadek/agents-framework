@@ -1,11 +1,11 @@
 # Sandbox tools
 
-`@agent-framework/sandbox` gives agents controlled execution capabilities. A model never gets raw OS authority, only narrow tools that pass the normal pipeline (validation, permissions, approval, audit).
+`@agent-farmework/sandbox` gives agents controlled execution capabilities. A model never gets raw OS authority, only narrow tools that pass the normal pipeline (validation, permissions, approval, audit).
 
 ## Workspace files
 
 ```ts
-import { workspaceTools } from "@agent-framework/sandbox";
+import { workspaceTools } from "@agent-farmework/sandbox";
 
 const tools = workspaceTools({ root: "/srv/workspaces/ticket-123", allowWrite: true, maxFileBytes: 500_000 });
 // workspace_read_file, workspace_list_dir, workspace_search, workspace_write_file (approval required by default)
@@ -22,7 +22,7 @@ Search skips `.git`, `node_modules` and symlinks. Permissions default to `worksp
 ## Commands
 
 ```ts
-import { commandTool } from "@agent-framework/sandbox";
+import { commandTool } from "@agent-farmework/sandbox";
 
 const run = commandTool({
   cwd: "/srv/workspaces/ticket-123",

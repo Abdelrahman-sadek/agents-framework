@@ -2,7 +2,7 @@
   "name": "agent-framework",
   "version": "0.1.0",
   "private": true,
-  "description": "Enterprise AI Agent Framework for TypeScript/Node.js",
+  "description": "TypeScript framework for production AI agents: tool calling, RAG, memory, multi-agent orchestration, guardrails, human approval, MCP, observability and evaluation. Provider-independent.",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
@@ -34,5 +34,22 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.2.0",
     "zod": "^4.1.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git"
+  },
+  "keywords": [
+    "ai-agents",
+    "agent-framework",
+    "llm",
+    "typescript",
+    "rag",
+    "multi-agent",
+    "tool-calling",
+    "mcp",
+    "guardrails",
+    "opentelemetry",
+    "evaluation"
+  ]
 }

@@ -1,4 +1,4 @@
-import { PlanningError, type LLMProvider } from "@agent-framework/core";
+import { PlanningError, type LLMProvider } from "@agent-farmework/core";
 import { z } from "zod";
 
 export interface PlanStep {

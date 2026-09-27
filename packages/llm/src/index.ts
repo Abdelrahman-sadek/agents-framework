@@ -1,10 +1,10 @@
 /**
- * @agent-framework/llm — provider-independent model selectors.
+ * @agent-farmework/llm — provider-independent model selectors.
  *
  * Selectors are plain, serializable references. They do not import vendor SDKs;
  * the matching `LLMProvider` adapter is registered with `createRuntime({ providers })`.
  */
-import type { LLMModelSelector, ModelCapabilities } from "@agent-framework/core";
+import type { LLMModelSelector, ModelCapabilities } from "@agent-farmework/core";
 
 type CapabilityOverrides = LLMModelSelector["capabilities"];
 

@@ -12,22 +12,22 @@
 
 | Guide | Package |
 | --- | --- |
-| [Context engine](./context.md) | `@agent-framework/context` |
-| [Knowledge / RAG](./knowledge.md) | `@agent-framework/knowledge` |
-| [Memory](./memory.md) | `@agent-framework/memory` |
-| [Planning](./planning.md) | `@agent-framework/orchestration` |
-| [Reflection and verification](./reflection.md) | `@agent-framework/core` |
-| [Orchestration](./orchestration.md) | `@agent-framework/orchestration` |
-| [Multi-agent systems](./multi-agent.md) | `@agent-framework/orchestration` |
-| [Skills](./skills.md) | `@agent-framework/core` |
-| [MCP](./mcp.md) | `@agent-framework/mcp` |
-| [Sandbox tools](./sandbox.md) | `@agent-framework/sandbox` |
-| [Security](./security.md) | `@agent-framework/security`, `@agent-framework/tools` |
-| [Guardrails](./guardrails.md) | `@agent-framework/security` |
-| [Observability](./observability.md) | `@agent-framework/observability` |
-| [Evaluation](./evaluation.md) | `@agent-framework/evaluation` |
-| [Production](./production.md) | `@agent-framework/production` |
-| [CLI and manifests](./cli.md) | `@agent-framework/cli` |
+| [Context engine](./context.md) | `@agent-farmework/context` |
+| [Knowledge / RAG](./knowledge.md) | `@agent-farmework/knowledge` |
+| [Memory](./memory.md) | `@agent-farmework/memory` |
+| [Planning](./planning.md) | `@agent-farmework/orchestration` |
+| [Reflection and verification](./reflection.md) | `@agent-farmework/core` |
+| [Orchestration](./orchestration.md) | `@agent-farmework/orchestration` |
+| [Multi-agent systems](./multi-agent.md) | `@agent-farmework/orchestration` |
+| [Skills](./skills.md) | `@agent-farmework/core` |
+| [MCP](./mcp.md) | `@agent-farmework/mcp` |
+| [Sandbox tools](./sandbox.md) | `@agent-farmework/sandbox` |
+| [Security](./security.md) | `@agent-farmework/security`, `@agent-farmework/tools` |
+| [Guardrails](./guardrails.md) | `@agent-farmework/security` |
+| [Observability](./observability.md) | `@agent-farmework/observability` |
+| [Evaluation](./evaluation.md) | `@agent-farmework/evaluation` |
+| [Production](./production.md) | `@agent-farmework/production` |
+| [CLI and manifests](./cli.md) | `@agent-farmework/cli` |
 
 ## Architecture
 

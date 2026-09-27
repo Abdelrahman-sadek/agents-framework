@@ -3,7 +3,7 @@
 A **skill** is a reusable, testable capability, not a prompt string. It bundles scoped instructions with everything they need:
 
 ```ts
-import { defineSkill, citationVerifier } from "@agent-framework/core";
+import { defineSkill, citationVerifier } from "@agent-farmework/core";
 
 export const citing = defineSkill({
   name: "citing",

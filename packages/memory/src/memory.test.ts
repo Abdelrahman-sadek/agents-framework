@@ -1,7 +1,7 @@
-import { AuthorizationError, InMemoryEventSink, createRuntime, defineAgent, sequentialIds, type Principal } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
-import { hashingEmbedder } from "@agent-framework/knowledge";
-import { ToolRuntime } from "@agent-framework/tools";
+import { AuthorizationError, InMemoryEventSink, createRuntime, defineAgent, sequentialIds, type Principal } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
+import { hashingEmbedder } from "@agent-farmework/knowledge";
+import { ToolRuntime } from "@agent-farmework/tools";
 import { describe, expect, test } from "vitest";
 import { createMemory } from "./memory.js";
 

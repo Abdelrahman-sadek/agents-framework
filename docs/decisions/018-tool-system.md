@@ -8,13 +8,13 @@ Phase 2 turns ADR 005's intent into code. The main questions were where tool con
 
 **Decisions**
 
-1. **Core owns a tool *port*; `@agent-framework/tools` owns tools.** Core defines `AgentTool` (name, description, JSON Schema parameters) and `ToolInvoker`. The tools package implements `ToolRuntime implements ToolInvoker`. The agent runtime can therefore only reach `execute` through the invoker, and `core` stays dependency-free.
+1. **Core owns a tool *port*; `@agent-farmework/tools` owns tools.** Core defines `AgentTool` (name, description, JSON Schema parameters) and `ToolInvoker`. The tools package implements `ToolRuntime implements ToolInvoker`. The agent runtime can therefore only reach `execute` through the invoker, and `core` stays dependency-free.
 2. **Branded tools.** `defineTool` produces branded, frozen objects. `ToolRuntime` refuses anything else, so a hand-built object with an `execute` function can't bypass validation or policy.
 3. **Fixed pipeline order:** parse → validate → authorize → approval → rate limit → idempotency → concurrency → execute (timeout, retry) → validate output → audit. Authorization comes before approval and runs again on resume. Approval never substitutes for authorization.
 4. **Permissions are required on both agent and user.** This prevents escalation in either direction. Richer rules are `ToolPolicy`s, composable with `allOf`. Policies fail closed.
 5. **Approval binding.** An `ApprovalRequest` records `toolCallId`, `toolName`, a SHA-256 hash of the canonical validated arguments, and expiry. Decisions that don't match are denied. The agent runtime persists pending approvals, including the original tool call, in `AgentState` and resumes through `runtime.resume()`.
 6. **Zod v4 for tools; a structural `Schema` in core.** Zod v4 generates JSON Schema natively (no extra dependency). Core only needs `safeParse`, so agent output schemas can come from any validator.
-7. **The LLM contract lives in core.** The runtime needs it, and provider adapters should depend only on `core`. `@agent-framework/llm` holds selectors now and gateway features (routing, fallbacks) later. This refines ADR 016.
+7. **The LLM contract lives in core.** The runtime needs it, and provider adapters should depend only on `core`. `@agent-farmework/llm` holds selectors now and gateway features (routing, fallbacks) later. This refines ADR 016.
 8. **Error hygiene.** Non-framework exceptions from tools are reported to the model as a generic `TOOL_ERROR`. The original message goes only to audit. Policy denial reasons are not sent to the model.
 9. **Retries are opt-in and conservative.** Only `retryable` framework errors are retried. Timeouts are not retried unless `retryOnTimeout` is set.
 

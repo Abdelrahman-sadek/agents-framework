@@ -1,5 +1,5 @@
 /**
- * @agent-framework/core — public API.
+ * @agent-farmework/core — public API.
  *
  * Everything exported here follows semantic versioning. Symbols marked
  * `@experimental` in their doc comment may change in minor releases.

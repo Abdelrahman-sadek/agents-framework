@@ -1,4 +1,4 @@
-import { cosineSimilarity } from "@agent-framework/core";
+import { cosineSimilarity } from "@agent-farmework/core";
 import { matchesFilter, type Chunk, type MetadataFilter } from "./types.js";
 import { tokenize } from "./embedding.js";
 

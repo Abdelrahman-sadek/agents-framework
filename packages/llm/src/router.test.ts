@@ -1,5 +1,5 @@
-import { LLMError } from "@agent-framework/core";
-import { createScriptedProvider } from "@agent-framework/core/testing";
+import { LLMError } from "@agent-farmework/core";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
 import { describe, expect, test, vi } from "vitest";
 import { openAICompatibleProvider } from "./openai-compatible.js";
 import { createModelRouter } from "./router.js";

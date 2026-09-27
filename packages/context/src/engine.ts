@@ -5,7 +5,7 @@ import {
   type ContextManager,
   type LLMMessage,
   type LLMProvider,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 
 export interface TokenCounter {
   count(text: string): number;

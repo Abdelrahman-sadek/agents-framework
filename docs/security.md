@@ -1,6 +1,6 @@
 # Security guide
 
-The [security model](./security/README.md) and [threat model](./security/threat-model.md) explain the design. This guide shows how to use the controls. `@agent-framework/security` provides guardrails, policies, egress control, secrets and identity mapping. The core enforces limits, and the tool runtime enforces authorization and approval.
+The [security model](./security/README.md) and [threat model](./security/threat-model.md) explain the design. This guide shows how to use the controls. `@agent-farmework/security` provides guardrails, policies, egress control, secrets and identity mapping. The core enforces limits, and the tool runtime enforces authorization and approval.
 
 ## Identity
 

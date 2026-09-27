@@ -1,4 +1,4 @@
-import { InMemoryEventSink, sequentialIds, type AgentIdentity, type Principal, type ToolInvocation } from "@agent-framework/core";
+import { InMemoryEventSink, sequentialIds, type AgentIdentity, type Principal, type ToolInvocation } from "@agent-farmework/core";
 import type { AnyTool } from "./tool.js";
 
 export const agentIdentity = (permissions: string[] = []): AgentIdentity => ({ agentId: "agent-1", name: "agent-1", permissions });

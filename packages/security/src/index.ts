@@ -1,5 +1,5 @@
 /**
- * @agent-framework/security — guardrails, authorization policies, egress control, secrets and identity.
+ * @agent-farmework/security — guardrails, authorization policies, egress control, secrets and identity.
  */
 export {
   contentPolicyGuardrail,

@@ -1,6 +1,6 @@
 # Memory
 
-`@agent-framework/memory`
+`@agent-farmework/memory`
 
 Memory is separate from knowledge. Knowledge is curated content. Memory is what an agent learns about users, entities and past events.
 

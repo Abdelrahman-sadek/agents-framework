@@ -1,6 +1,6 @@
 # Production
 
-`@agent-framework/production` turns the runtime into a durable service:
+`@agent-farmework/production` turns the runtime into a durable service:
 
 ```
 API → AgentService.submit() → durable queue → AgentWorker → runtime.run/resume/recover → RunStateStore
@@ -12,7 +12,7 @@ Long-running work never depends on an HTTP request staying open.
 
 ```ts
 import pg from "pg";
-import { createFramework, PostgresRunStateStore, PostgresAuditSink, PostgresIdempotencyStore, PostgresJobQueue } from "@agent-framework/production";
+import { createFramework, PostgresRunStateStore, PostgresAuditSink, PostgresIdempotencyStore, PostgresJobQueue } from "@agent-farmework/production";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });   // any client with query(text, params)
 const runs = new PostgresRunStateStore(pool); await runs.migrate();

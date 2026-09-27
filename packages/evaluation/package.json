@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/evaluation",
+  "name": "@agent-farmework/evaluation",
   "version": "0.1.0",
   "description": "Evaluation: datasets, deterministic and LLM-judge evaluators, tool/retrieval/safety/cost/latency evaluation, reports and regression comparison",
   "license": "Apache-2.0",
@@ -23,20 +23,32 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*"
+    "@agent-farmework/core": "workspace:*"
   },
   "devDependencies": {
-    "@agent-framework/knowledge": "workspace:*",
-    "@agent-framework/security": "workspace:*",
-    "@agent-framework/tools": "workspace:*"
+    "@agent-farmework/knowledge": "workspace:*",
+    "@agent-farmework/security": "workspace:*",
+    "@agent-farmework/tools": "workspace:*"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/evaluation"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
-  }
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "ai-agents",
+    "llm",
+    "typescript",
+    "agent-framework",
+    "evaluation",
+    "evals",
+    "llm-as-judge"
+  ]
 }

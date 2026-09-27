@@ -1,15 +1,17 @@
 name: Release
 
-# Publishes all public packages when a version tag (v*) is pushed.
-# Requires the NPM_TOKEN repository secret and a final decision on the npm
-# scope (ADR 014). Packages marked "private" are skipped.
+# Publishes every package to GitHub Packages (npm registry) when a version
+# tag (v*) is pushed, or on demand. Authenticates with the built-in
+# GITHUB_TOKEN, which works because the repository is owned by the
+# organization that matches the package scope (@agent-farmework).
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  packages: write
 
 jobs:
   publish:
@@ -21,10 +23,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
+          registry-url: https://npm.pkg.github.com
+          scope: "@agent-farmework"
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm build
-      - run: pnpm -r publish --access public --no-git-checks --provenance
+      - run: pnpm -r publish --no-git-checks
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -5,9 +5,9 @@ Version 0.x. Everything exported from a package's `index.ts` is public. Exports 
 ## Simple path
 
 ```ts
-import { createRuntime, defineAgent } from "@agent-framework/core";
-import { models } from "@agent-framework/llm";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { createRuntime, defineAgent } from "@agent-farmework/core";
+import { models } from "@agent-farmework/llm";
+import { ToolRuntime, defineTool } from "@agent-farmework/tools";
 
 const search = defineTool({ name, description, input, output, execute });
 const runtime = createRuntime({ providers: [provider], tools: new ToolRuntime() });
@@ -15,7 +15,7 @@ const agent = defineAgent({ name, model: models.openai("…"), instructions, too
 const result = await agent.run({ input: "Research X" });
 ```
 
-## `@agent-framework/core`
+## `@agent-farmework/core`
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
@@ -35,9 +35,9 @@ const result = await agent.run({ input: "Research X" });
 | `Clock`, `IdGenerator`, `systemClock`, `randomIds`, `sequentialIds` | types / values | Determinism |
 | `raceAbort`, `sleep` | functions | Cancellation helpers for adapters |
 
-`@agent-framework/core/testing`: `createScriptedProvider(steps, options)`, for tests only.
+`@agent-farmework/core/testing`: `createScriptedProvider(steps, options)`, for tests only.
 
-## `@agent-framework/tools`
+## `@agent-farmework/tools`
 
 | Export | Purpose |
 | --- | --- |
@@ -48,7 +48,7 @@ const result = await agent.run({ input: "Research X" });
 | `AuditSink`, `ToolAuditRecord`, `InMemoryAuditLog` | Audit |
 | `IdempotencyStore`, `InMemoryIdempotencyStore`, `RateLimiter`, `InMemoryRateLimiter` | Reliability stores |
 
-## `@agent-framework/llm`
+## `@agent-farmework/llm`
 
 | Export | Purpose |
 | --- | --- |
@@ -59,18 +59,18 @@ const result = await agent.run({ input: "Research X" });
 
 | Package | Main exports |
 | --- | --- |
-| `@agent-framework/context` | `createContextEngine`, `llmSummarizer`, `approximateTokenCounter` |
-| `@agent-framework/knowledge` | `createKnowledgeBase`, `recursiveChunker`, `fixedSizeChunker`, `htmlToText`, `hashingEmbedder`, `InMemoryVectorStore`, `bm25`, `lexicalReranker` |
-| `@agent-framework/memory` | `createMemory`, `Memory`, `InMemoryMemoryStore`, `DEFAULT_SECRET_PATTERNS` |
-| `@agent-framework/orchestration` | `defineOrchestrator`, `defineWorker`, `staticPlanner`, `llmPlanner`, `validatePlan`, `agentAsTool`, `supervisor`, `runPipeline`, `runParallel`, `agentVerifier` |
-| `@agent-framework/security` | guardrails (`piiGuardrail`, `promptInjectionGuardrail`, `secretLeakGuardrail`, `contentPolicyGuardrail`, `maxLengthGuardrail`), policies (`rbacPolicy`, `abacPolicy`, `tenantIsolationPolicy`, `dataClassificationPolicy`), `createEgressPolicy`, `safeFetch`, `defineHttpTool`, `envSecrets`, `principalFromClaims` |
-| `@agent-framework/observability` | `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `readEventFile`, `CostTracker`, `inspectRun`, `formatRunReport`, `createDashboardServer` |
-| `@agent-framework/evaluation` | `skillDataset`, `defineDataset`, `defineEvaluation`, `evaluators`, `formatReport`, `compareReports` |
-| `@agent-framework/production` | `PgVectorStore`, `PostgresMemoryStore`, `RedisRateLimiter`, `RedisIdempotencyStore`, `createFramework`, `AgentWorker`, `AgentService`, run-state stores, job queues, `createHealthCheck`, `installGracefulShutdown`, `openSqlite` |
-| `@agent-framework/provider-anthropic` | `anthropicProvider`, `ANTHROPIC_MODELS` |
-| `@agent-framework/mcp` | `mcpTools`, `connectStdioServer`, `connectHttpServer` |
-| `@agent-framework/sandbox` | `workspaceTools`, `commandTool`, `confine`, `localProcessRunner` |
-| `@agent-framework/cli` | `runCli`, `defineAgentFromManifest`, `parseManifest`, `checkManifest` (+ `agent` binary) |
+| `@agent-farmework/context` | `createContextEngine`, `llmSummarizer`, `approximateTokenCounter` |
+| `@agent-farmework/knowledge` | `createKnowledgeBase`, `recursiveChunker`, `fixedSizeChunker`, `htmlToText`, `hashingEmbedder`, `InMemoryVectorStore`, `bm25`, `lexicalReranker` |
+| `@agent-farmework/memory` | `createMemory`, `Memory`, `InMemoryMemoryStore`, `DEFAULT_SECRET_PATTERNS` |
+| `@agent-farmework/orchestration` | `defineOrchestrator`, `defineWorker`, `staticPlanner`, `llmPlanner`, `validatePlan`, `agentAsTool`, `supervisor`, `runPipeline`, `runParallel`, `agentVerifier` |
+| `@agent-farmework/security` | guardrails (`piiGuardrail`, `promptInjectionGuardrail`, `secretLeakGuardrail`, `contentPolicyGuardrail`, `maxLengthGuardrail`), policies (`rbacPolicy`, `abacPolicy`, `tenantIsolationPolicy`, `dataClassificationPolicy`), `createEgressPolicy`, `safeFetch`, `defineHttpTool`, `envSecrets`, `principalFromClaims` |
+| `@agent-farmework/observability` | `openTelemetrySink`, `logSink`, `redactingSink`, `fileEventSink`, `readEventFile`, `CostTracker`, `inspectRun`, `formatRunReport`, `createDashboardServer` |
+| `@agent-farmework/evaluation` | `skillDataset`, `defineDataset`, `defineEvaluation`, `evaluators`, `formatReport`, `compareReports` |
+| `@agent-farmework/production` | `PgVectorStore`, `PostgresMemoryStore`, `RedisRateLimiter`, `RedisIdempotencyStore`, `createFramework`, `AgentWorker`, `AgentService`, run-state stores, job queues, `createHealthCheck`, `installGracefulShutdown`, `openSqlite` |
+| `@agent-farmework/provider-anthropic` | `anthropicProvider`, `ANTHROPIC_MODELS` |
+| `@agent-farmework/mcp` | `mcpTools`, `connectStdioServer`, `connectHttpServer` |
+| `@agent-farmework/sandbox` | `workspaceTools`, `commandTool`, `confine`, `localProcessRunner` |
+| `@agent-farmework/cli` | `runCli`, `defineAgentFromManifest`, `parseManifest`, `checkManifest` (+ `agent` binary) |
 
 Core additions since Phase 2: `agent.stream`, `StreamCallbacks`, `defineSkill`, approval `modified` / `escalated` decisions, `runtime.recover` / `agent.recover`, `ContextProvider` / `ContextItem`, `Guardrail`, `Verifier` with `ruleVerifier` / `citationVerifier` / `llmCritic`, `EmbeddingProvider`, `createEventEmitter`, `createRuleProvider` (testing).
 

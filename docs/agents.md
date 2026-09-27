@@ -170,12 +170,12 @@ defineAgent({
 
 ## Crash recovery
 
-If the process running a run dies, its state stays `RUNNING`. `agent.recover({ runId })` (or `runtime.recover`) re-invokes the tool calls of the last model turn that have no recorded result, then continues. `AgentWorker` in `@agent-framework/production` does this automatically ([Production](./production.md)).
+If the process running a run dies, its state stays `RUNNING`. `agent.recover({ runId })` (or `runtime.recover`) re-invokes the tool calls of the last model turn that have no recorded result, then continues. `AgentWorker` in `@agent-farmework/production` does this automatically ([Production](./production.md)).
 
 ## Testing agents
 
 ```ts
-import { createScriptedProvider } from "@agent-framework/core/testing";
+import { createScriptedProvider } from "@agent-farmework/core/testing";
 
 const provider = createScriptedProvider([
   { toolCalls: [{ id: "c1", name: "get_order", arguments: { orderId: "1" } }] },

@@ -1,4 +1,4 @@
-import { ConfigurationError, type AgentTool, type JsonSchema, type Principal } from "@agent-framework/core";
+import { ConfigurationError, type AgentTool, type JsonSchema, type Principal } from "@agent-farmework/core";
 import { z } from "zod";
 
 /** How a tool reaches the outside world. MCP, HTTP, sandbox… are adapters producing ordinary tools. */
@@ -76,7 +76,7 @@ export interface ToolConfig<TInput, TOutput> {
   metadata?: Readonly<Record<string, unknown>>;
 }
 
-const TOOL_BRAND: unique symbol = Symbol.for("@agent-framework/tools.Tool");
+const TOOL_BRAND: unique symbol = Symbol.for("@agent-farmework/tools.Tool");
 const TOOL_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 
 export interface Tool<TInput = unknown, TOutput = unknown> extends AgentTool {

@@ -1,5 +1,5 @@
 /**
- * @agent-framework/observability — consumers of the framework event stream.
+ * @agent-farmework/observability — consumers of the framework event stream.
  */
 export { openTelemetrySink } from "./otel.js";
 export type { OpenTelemetrySinkOptions } from "./otel.js";

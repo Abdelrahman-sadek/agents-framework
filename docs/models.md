@@ -4,13 +4,13 @@ The core defines the provider contract (`LLMProvider`). Vendors are adapters.
 
 | Adapter | Package | Covers |
 | --- | --- | --- |
-| `anthropicProvider()` | `@agent-framework/provider-anthropic` | Claude via the official `@anthropic-ai/sdk` (also Bedrock / Vertex / Foundry clients through `client`) |
-| `openAICompatibleProvider({ id, baseURL, apiKey })` | `@agent-framework/llm` | OpenAI, OpenRouter, vLLM, Ollama, LM Studio, llama.cpp server |
-| `createScriptedProvider`, `createRuleProvider` | `@agent-framework/core/testing` | Deterministic tests and offline examples |
+| `anthropicProvider()` | `@agent-farmework/provider-anthropic` | Claude via the official `@anthropic-ai/sdk` (also Bedrock / Vertex / Foundry clients through `client`) |
+| `openAICompatibleProvider({ id, baseURL, apiKey })` | `@agent-farmework/llm` | OpenAI, OpenRouter, vLLM, Ollama, LM Studio, llama.cpp server |
+| `createScriptedProvider`, `createRuleProvider` | `@agent-farmework/core/testing` | Deterministic tests and offline examples |
 
 ```ts
-import { anthropicProvider } from "@agent-framework/provider-anthropic";
-import { models, openAICompatibleProvider, withCircuitBreaker, withFallback, withRateLimit } from "@agent-framework/llm";
+import { anthropicProvider } from "@agent-farmework/provider-anthropic";
+import { models, openAICompatibleProvider, withCircuitBreaker, withFallback, withRateLimit } from "@agent-farmework/llm";
 
 const claude = anthropicProvider();                          // reads ANTHROPIC_API_KEY
 const local = openAICompatibleProvider({ id: "ollama", baseURL: "http://localhost:11434/v1" });
@@ -44,7 +44,7 @@ Both adapters implement `stream()` (Anthropic SDK streaming; SSE for OpenAI-comp
 ## Model router
 
 ```ts
-import { createModelRouter } from "@agent-framework/llm";
+import { createModelRouter } from "@agent-farmework/llm";
 
 const router = createModelRouter({
   id: "router",

@@ -1,13 +1,13 @@
 # Core runtime
 
-`@agent-framework/core` is the smallest stable part of the framework. It owns agent definition, the run loop, state, events, errors and limits, and it defines the **ports** everything else plugs into. It depends on no vendor SDK, database, queue, telemetry library or protocol.
+`@agent-farmework/core` is the smallest stable part of the framework. It owns agent definition, the run loop, state, events, errors and limits, and it defines the **ports** everything else plugs into. It depends on no vendor SDK, database, queue, telemetry library or protocol.
 
 ```
-                 ┌───────────────────────── @agent-framework/core ─────────────────────────┐
+                 ┌───────────────────────── @agent-farmework/core ─────────────────────────┐
 defineAgent() ──▶│ Agent ──▶ AgentRuntime (createRuntime)                                    │
                  │             │  run loop · limits · retries · cancellation · state        │
                  │             ├──▶ LLMProvider        (adapters: OpenAI, Anthropic, local…) │
-                 │             ├──▶ ToolInvoker        (@agent-framework/tools ToolRuntime)  │
+                 │             ├──▶ ToolInvoker        (@agent-farmework/tools ToolRuntime)  │
                  │             ├──▶ ContextManager     (Phase 4 context engine)             │
                  │             ├──▶ RunStateStore      (memory · PostgreSQL · Redis · …)     │
                  │             ├──▶ EventSink[]        (logs · OTel bridge · UI · audit)     │
@@ -72,7 +72,7 @@ Adapters must:
 
 `ModelCapabilities` describes locality (`cloud`/`local`), context window, tool calling, structured output, streaming, vision, embeddings, pricing, latency and allowed data classifications. A later model router can choose models from task requirements, capabilities, cost, latency and locality. `LLMModelSelector.fallbacks` is reserved for that.
 
-> **Why the LLM contract lives in core:** the runtime needs it to run agents, and keeping it in the dependency-free core lets any provider adapter depend on `core` alone. `@agent-framework/llm` holds selectors today and the gateway features (routing, fallbacks, caching) later. See [ADR 018](../decisions/018-tool-system.md).
+> **Why the LLM contract lives in core:** the runtime needs it to run agents, and keeping it in the dependency-free core lets any provider adapter depend on `core` alone. `@agent-farmework/llm` holds selectors today and the gateway features (routing, fallbacks, caching) later. See [ADR 018](../decisions/018-tool-system.md).
 
 ## Durability boundary
 

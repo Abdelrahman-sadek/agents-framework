@@ -1,5 +1,5 @@
 {
-  "name": "@agent-framework/knowledge",
+  "name": "@agent-farmework/knowledge",
   "version": "0.1.0",
   "description": "Knowledge / RAG: documents, chunking, embeddings, vector + keyword + hybrid retrieval, reranking, citations, tenant isolation",
   "license": "Apache-2.0",
@@ -23,17 +23,30 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@agent-framework/core": "workspace:*",
-    "@agent-framework/tools": "workspace:*",
+    "@agent-farmework/core": "workspace:*",
+    "@agent-farmework/tools": "workspace:*",
     "zod": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "url": "git+https://github.com/agent-farmework/agents-framework.git",
     "directory": "packages/knowledge"
   },
-  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "homepage": "https://github.com/agent-farmework/agents-framework#readme",
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
-  }
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "ai-agents",
+    "llm",
+    "typescript",
+    "agent-framework",
+    "rag",
+    "retrieval",
+    "vector-search",
+    "embeddings"
+  ]
 }

@@ -8,8 +8,8 @@ import {
   type AgentRunResult,
   type Principal,
   type Verifier,
-} from "@agent-framework/core";
-import { defineTool, type AnyTool } from "@agent-framework/tools";
+} from "@agent-farmework/core";
+import { defineTool, type AnyTool } from "@agent-farmework/tools";
 import { z } from "zod";
 
 const delegationDepth = new AsyncLocalStorage<number>();

@@ -8,7 +8,7 @@ import {
   type LLMResponse,
   type LLMStreamEvent,
   type ModelCapabilities,
-} from "@agent-framework/core";
+} from "@agent-farmework/core";
 
 export interface OpenAICompatibleOptions {
   /** Provider id referenced by selectors, e.g. "openai", "openrouter", "ollama". */

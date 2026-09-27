@@ -1,4 +1,4 @@
-import type { EmbeddingProvider } from "@agent-framework/core";
+import type { EmbeddingProvider } from "@agent-farmework/core";
 
 export function tokenize(text: string): string[] {
   return text

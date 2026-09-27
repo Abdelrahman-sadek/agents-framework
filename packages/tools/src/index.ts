@@ -1,5 +1,5 @@
 /**
- * @agent-framework/tools — tool definition and the deterministic tool runtime.
+ * @agent-farmework/tools — tool definition and the deterministic tool runtime.
  */
 export { defineTool, isTool } from "./tool.js";
 export type {
