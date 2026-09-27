@@ -156,3 +156,32 @@ describe("Phase 11 hooks: guardrails", () => {
     expect((await agent.run({ input: "hi" })).error?.code).toBe("GUARDRAIL_BLOCKED");
   });
 });
+
+describe("Phase 14 hook: crash recovery", () => {
+  test("re-invokes unanswered tool calls from the checkpoint and continues", async () => {
+    const { InMemoryRunStateStore } = await import("./state-store.js");
+    const store = new InMemoryRunStateStore();
+    let crash = true;
+    const invoked: string[] = [];
+    const invoker: ToolInvoker = {
+      invoke: async (inv) => {
+        if (crash) throw new Error("worker died");
+        invoked.push(inv.toolCallId);
+        return { status: "success", output: "ok", attempts: 1, durationMs: 0, cached: false };
+      },
+    };
+    const provider = createScriptedProvider([{ toolCalls: [{ id: "t1", name: "noop", arguments: {} }] }, { text: "done" }]);
+    const runtime = createRuntime({ providers: [provider], tools: invoker, stateStore: store });
+    const agent = defineAgent({ name: "a", model: { providerId: "scripted", modelId: "m" }, tools: [{ name: "noop", description: "d", parameters: {} }], runtime });
+    const first = await agent.run({ input: "go" });
+    // Simulate the process dying mid-tool-call: the persisted checkpoint is still RUNNING.
+    const snapshot = await store.load(first.runId);
+    await store.save({ ...snapshot!, status: "RUNNING", messages: snapshot!.messages.filter((m) => m.role !== "tool"), steps: snapshot!.steps.slice(0, 1) });
+    crash = false;
+    const recovered = await agent.recover({ runId: first.runId });
+    expect(recovered).toMatchObject({ status: "COMPLETED", output: "done" });
+    expect(invoked).toEqual(["t1"]);
+    expect(recovered.events[0]?.type).toBe("AGENT_RECOVERED");
+    await expect(agent.recover({ runId: first.runId })).rejects.toThrow(/COMPLETED/);
+  });
+});

@@ -41,6 +41,9 @@
       ],
       "@agent-framework/tools": [
         "./packages/tools/src/index.ts"
+      ],
+      "@agent-framework/production": [
+        "./packages/production/src/index.ts"
       ]
     }
   },

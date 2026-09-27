@@ -5,7 +5,7 @@
  * `@experimental` in their doc comment may change in minor releases.
  */
 export { defineAgent } from "./agent.js";
-export type { Agent, AgentConfig, AgentRunResult, AgentRuntime, ResumeOptions, RunOptions } from "./agent.js";
+export type { Agent, AgentConfig, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions } from "./agent.js";
 
 export { createRuntime, raceAbort, sleep } from "./runtime.js";
 export type { RuntimeOptions } from "./runtime.js";

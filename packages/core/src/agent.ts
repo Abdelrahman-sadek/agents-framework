@@ -56,6 +56,11 @@ export interface ResumeOptions {
   timeoutMs?: number;
 }
 
+export interface RecoverOptions {
+  runId: string;
+  signal?: AbortSignal;
+}
+
 export interface AgentRunResult<TOutput = string> {
   runId: string;
   agentId: string;
@@ -74,6 +79,8 @@ export interface AgentRunResult<TOutput = string> {
 export interface AgentRuntime {
   run<TOutput>(agent: Agent<TOutput>, options: RunOptions): Promise<AgentRunResult<TOutput>>;
   resume<TOutput>(agent: Agent<TOutput>, options: ResumeOptions): Promise<AgentRunResult<TOutput>>;
+  /** Continue a run interrupted by a crash (state still RUNNING). */
+  recover<TOutput>(agent: Agent<TOutput>, options: RecoverOptions): Promise<AgentRunResult<TOutput>>;
   getState(runId: string): Promise<AgentState | undefined>;
 }
 
@@ -84,6 +91,7 @@ export interface Agent<TOutput = string> {
   readonly config: Readonly<AgentConfig<TOutput>>;
   run(options: RunOptions): Promise<AgentRunResult<TOutput>>;
   resume(options: ResumeOptions): Promise<AgentRunResult<TOutput>>;
+  recover(options: RecoverOptions): Promise<AgentRunResult<TOutput>>;
   /** Returns a copy of this agent bound to another runtime. */
   withRuntime(runtime: AgentRuntime): Agent<TOutput>;
 }
@@ -130,6 +138,7 @@ export function defineAgent<TOutput = string>(config: AgentConfig<TOutput>): Age
     config: frozen,
     run: (options: RunOptions) => requireRuntime().run(agent, options),
     resume: (options: ResumeOptions) => requireRuntime().resume(agent, options),
+    recover: (options: RecoverOptions) => requireRuntime().recover(agent, options),
     withRuntime: (runtime: AgentRuntime) => defineAgent<TOutput>({ ...config, runtime }),
   });
   return agent;

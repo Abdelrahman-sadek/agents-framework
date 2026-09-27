@@ -1,4 +1,4 @@
-import type { Agent, AgentRunResult, AgentRuntime, ResumeOptions, RunOptions } from "./agent.js";
+import type { Agent, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions } from "./agent.js";
 import { passthroughContext, type ContextManager } from "./context.js";
 import {
   AgentError,
@@ -218,6 +218,36 @@ class DefaultAgentRuntime implements AgentRuntime {
     return this.result<TOutput>(exec);
   }
 
+  /**
+   * Continue a run whose worker died (status still RUNNING in the store).
+   * Tool calls requested by the last model turn that have no recorded result
+   * are invoked again (tool idempotency keys protect side effects); then the
+   * loop continues from the last checkpoint.
+   */
+  async recover<TOutput>(agent: Agent<TOutput>, options: RecoverOptions): Promise<AgentRunResult<TOutput>> {
+    const { provider, capabilities } = await this.prepare(agent);
+    const state = await this.store.load(options.runId);
+    if (state === undefined) throw new ValidationError(`recover: run '${options.runId}' not found`);
+    if (state.agentId !== agent.id) throw new ValidationError(`recover: run '${options.runId}' belongs to agent '${state.agentId}'`);
+    if (state.status !== "RUNNING") throw new ValidationError(`recover: run '${options.runId}' is ${state.status}, not RUNNING`, { runId: state.runId });
+    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal);
+    for (const step of state.steps) {
+      if (step.status === "RUNNING") step.status = "FAILED";
+    }
+    const lastAssistant = [...state.messages].reverse().find((m) => m.role === "assistant");
+    const answered = new Set(state.messages.flatMap((m) => (m.role === "tool" ? [m.toolCallId] : [])));
+    const waiting = new Set(state.pendingApprovals.map((p) => p.toolCall.id));
+    const missing = lastAssistant?.role === "assistant" ? (lastAssistant.toolCalls ?? []).filter((c) => !answered.has(c.id) && !waiting.has(c.id)) : [];
+    const llmCallId = [...state.steps].reverse().find((s) => s.kind === "llm_call")?.llmCallId ?? "recovered";
+    exec.emitter.emit("AGENT_RECOVERED", { pendingToolCalls: missing.length });
+    await this.drive(exec, async () => {
+      await this.runToolCalls(exec, missing, llmCallId);
+      if (this.waitIfPending(exec)) return;
+      await this.loop(exec);
+    });
+    return this.result<TOutput>(exec);
+  }
+
   // ---------------------------------------------------------------- setup
 
   private async prepare<TOutput>(agent: Agent<TOutput>): Promise<{
@@ -316,16 +346,23 @@ class DefaultAgentRuntime implements AgentRuntime {
         if (await this.complete(exec, response.content)) return;
         continue;
       }
-      for (const call of response.toolCalls) {
-        this.throwIfAborted(exec);
-        if (state.usage.toolCalls >= state.limits.maxToolCalls) {
-          throw this.limitExceeded(exec, "toolCalls", state.limits.maxToolCalls, state.usage.toolCalls + 1);
-        }
-        state.usage.toolCalls += 1;
-        await this.invokeTool(exec, call, llmCallId);
-      }
+      // Checkpoint before side effects, so a crashed worker can recover exactly these tool calls.
+      await this.checkpoint(exec);
+      await this.runToolCalls(exec, response.toolCalls, llmCallId);
       if (this.waitIfPending(exec)) return;
       await this.checkpoint(exec);
+    }
+  }
+
+  private async runToolCalls(exec: Execution, calls: readonly LLMToolCall[], llmCallId: string): Promise<void> {
+    const { state } = exec;
+    for (const call of calls) {
+      this.throwIfAborted(exec);
+      if (state.usage.toolCalls >= state.limits.maxToolCalls) {
+        throw this.limitExceeded(exec, "toolCalls", state.limits.maxToolCalls, state.usage.toolCalls + 1);
+      }
+      state.usage.toolCalls += 1;
+      await this.invokeTool(exec, call, llmCallId);
     }
   }
 

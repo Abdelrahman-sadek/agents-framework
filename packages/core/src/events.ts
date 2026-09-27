@@ -21,6 +21,7 @@ export interface AgentEventPayloads {
   AGENT_TIMED_OUT: { timeoutMs: number };
   AGENT_WAITING_FOR_APPROVAL: { approvals: ApprovalRequest[] };
   AGENT_RESUMED: { decisions: { approvalId: string; decision: string }[] };
+  AGENT_RECOVERED: { pendingToolCalls: number };
 
   STEP_STARTED: { stepId: string; kind: StepKind; index: number };
   STEP_COMPLETED: { stepId: string; kind: StepKind };
