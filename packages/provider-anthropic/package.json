@@ -1,0 +1,28 @@
+{
+  "name": "@agent-framework/provider-anthropic",
+  "version": "0.1.0",
+  "description": "Anthropic Claude adapter for the framework LLMProvider contract (official @anthropic-ai/sdk)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run --root ../.. --project provider-anthropic"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*",
+    "@anthropic-ai/sdk": "^0.128.0"
+  }
+}

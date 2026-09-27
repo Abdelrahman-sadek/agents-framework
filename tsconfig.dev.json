@@ -44,6 +44,9 @@
       ],
       "@agent-framework/production": [
         "./packages/production/src/index.ts"
+      ],
+      "@agent-framework/provider-anthropic": [
+        "./packages/provider-anthropic/src/index.ts"
       ]
     }
   },

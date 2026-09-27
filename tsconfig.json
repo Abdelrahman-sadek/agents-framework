@@ -36,6 +36,9 @@
     },
     {
       "path": "packages/production"
+    },
+    {
+      "path": "packages/provider-anthropic"
     }
   ]
 }
