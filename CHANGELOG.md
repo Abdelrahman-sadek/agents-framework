@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added — Phases 3–14
+
+- **Structured outputs (3):** JSON Schema `responseFormat` derived from the output schema; correction loop bounded by `maxOutputCorrections`.
+- **Context (4):** `@agent-framework/context` engine: token budgets, ranked context items with provenance, tool-result truncation, atomic tool turns, cached summarization, `ContextLimitError`.
+- **Knowledge (5):** `@agent-framework/knowledge`: chunkers, local hashing embedder, in-memory vector store, BM25, hybrid RRF search, reranking, metadata filters, tenant scoping, citations, context provider and search tool.
+- **Memory (6):** `@agent-framework/memory`: conversation/user/entity/episodic/semantic memory with write policies, TTL, provenance, authorization, forget and purge, tools and context provider.
+- **Planning / orchestration / multi-agent (7, 9, 10):** `@agent-framework/orchestration`: validated DAG plans, static and model planners, workers, bounded parallel execution, retries, re-planning, aggregation, supervisor, delegation with depth limits, pipeline, parallel.
+- **Reflection (8):** verifier port with rule, citation, LLM-critic and cross-agent verifiers; bounded revision loop.
+- **Security (11):** `@agent-framework/security`: PII, prompt-injection, secret-leak, content and length guardrails (input, tool result, output); RBAC, ABAC, tenant-isolation and data-classification policies; SSRF-safe egress and HTTP tools; secrets; claims → principal.
+- **Observability (12):** `@agent-framework/observability`: OpenTelemetry spans and metrics, redaction, structured logs, JSONL traces, cost tracking, run inspection.
+- **Evaluation (13):** `@agent-framework/evaluation`: datasets, 12 evaluators including LLM judge, thresholds, markdown reports, regression comparison.
+- **Production (14):** `runtime.recover()` with pre-side-effect checkpoints; `@agent-framework/production` with PostgreSQL/SQLite stores, durable queues with leases, workers, service API, health checks, graceful shutdown, `createFramework()`.
+- **Models:** `@agent-framework/provider-anthropic` (official SDK), OpenAI-compatible fetch adapter, circuit breaker, rate limit and fallback wrappers.
+- **CLI:** `agent create | dev | test | evaluate | inspect | trace | validate` and JSON agent manifests.
+- **Examples:** research agent, RAG agent, orchestrator, enterprise agent; `createRuleProvider` for offline scenarios.
+
 ### Added — Phase 2: tool system
 
 - `@agent-framework/tools`: `defineTool()` with Zod input/output schemas and JSON Schema generation for models.

@@ -148,21 +148,22 @@ Mitigations:
 - cautious handling of provider responses
 - clear boundaries between provider-specific behavior and core logic
 
-## Mitigation status (after Phase 2)
+## Mitigation status
 
 | Threat | Status |
 | --- | --- |
-| T1, T2 Prompt injection | **Partial.** Injected text cannot grant permissions, add tools, or bypass validation, approval or limits. Detection is Phase 11. |
-| T3 Tool call manipulation | **Mitigated** at the tool boundary: schema validation, deterministic policy, argument-bound approvals. |
-| T4 Excessive tool agency | **Mitigated:** per-agent tool lists, dual (agent + user) permissions, approval, `maxToolCalls`, rate and concurrency limits. |
-| T5 Leakage through outputs | Open (guardrails, Phase 11). Raw tool exceptions are no longer echoed to the model. |
-| T6 Leakage through telemetry | **Partial:** events carry no content; sensitive tool input redacted in audit. OTel redaction in Phase 12. |
-| T7 SSRF | Open until the HTTP adapter (egress allow-list) ships. |
-| T8 Credential exposure | **Partial:** tool metadata is never sent to models; secrets stay in adapters. |
-| T9 Tenant isolation | **Partial:** tenant is part of every authorization request, idempotency keys and rate-limit buckets. Storage isolation arrives with durable adapters. |
-| T10 Approval bypass or loss | **Mitigated** for bypass (binding, expiry, re-authorization); loss depends on a durable `RunStateStore`. |
-| T11 Denial of wallet | **Mitigated:** step, token, cost, tool-call and time budgets. |
-| T12 Dependency abuse | Core has zero runtime dependencies; tools add only `zod`. |
+| T1 Prompt injection via user input | **Mitigated in depth:** injection guardrail on input; injected text cannot grant permissions, add tools, or skip validation, approval or limits. |
+| T2 Prompt injection via retrieved knowledge / tool output | **Mitigated in depth:** context rendered as delimited data; `tool_result` guardrails withhold suspicious results; the same tool-boundary guarantees apply. |
+| T3 Tool call manipulation | **Mitigated:** schema validation, deterministic policies, argument-bound approvals. |
+| T4 Excessive tool agency | **Mitigated:** per-agent tool lists, dual permissions, RBAC/ABAC, approval, tool-call limits, rate and concurrency limits, bounded delegation. |
+| T5 Leakage through outputs | **Mitigated:** PII and secret-leak output guardrails, content policies, safety evaluators. |
+| T6 Leakage through telemetry | **Mitigated:** events carry no content; `redactingSink`; audit redaction for sensitive tools. |
+| T7 SSRF | **Mitigated** for HTTP tools built with `defineHttpTool` / `safeFetch` (allow-list, address checks, redirect checks). Custom tools that fetch must use them. |
+| T8 Credential exposure | **Mitigated:** `SecretProvider` resolves secrets inside tools; secret-leak guardrail; memory rejects secret-like content. |
+| T9 Tenant isolation | **Mitigated:** tenant in every authorization request, tenant-isolation policy, tenant-scoped knowledge, memory, idempotency and rate limits, tenant column in durable stores. |
+| T10 Approval bypass or loss | **Mitigated:** binding, expiry, re-authorization; durable run state (PostgreSQL/SQLite) keeps pending approvals across restarts. |
+| T11 Denial of wallet | **Mitigated:** step, token, cost, tool-call, time, correction and delegation limits; cost tracking; production config requires a budget. |
+| T12 Dependency abuse | Core has zero runtime dependencies; vendor SDKs are isolated in adapter packages; new dependencies need justification (ADR 020). |
 
 ## Trust levels
 

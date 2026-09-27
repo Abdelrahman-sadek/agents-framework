@@ -242,6 +242,20 @@ export class InfrastructureError extends FrameworkError {
   }
 }
 
+export class VerificationError extends FrameworkError {
+  constructor(message: string, options: Opts = {}) {
+    super("VERIFICATION_FAILED", "validation", message, { ...options, retryable: false });
+    this.name = "VerificationError";
+  }
+}
+
+export class GuardrailError extends FrameworkError {
+  constructor(message: string, options: Opts = {}) {
+    super("GUARDRAIL_BLOCKED", "policy", message, { ...options, retryable: false });
+    this.name = "GuardrailError";
+  }
+}
+
 // Reserved for later phases; defined now so error codes stay stable.
 export class ContextLimitError extends FrameworkError {
   constructor(message: string, options: Opts = {}) {

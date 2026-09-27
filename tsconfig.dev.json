@@ -6,11 +6,53 @@
     "declaration": false,
     "declarationMap": false,
     "paths": {
-      "@agent-framework/core": ["./packages/core/src/index.ts"],
-      "@agent-framework/core/testing": ["./packages/core/src/testing.ts"],
-      "@agent-framework/llm": ["./packages/llm/src/index.ts"],
-      "@agent-framework/tools": ["./packages/tools/src/index.ts"]
+      "@agent-framework/core/testing": [
+        "./packages/core/src/testing.ts"
+      ],
+      "@agent-framework/cli": [
+        "./packages/cli/src/index.ts"
+      ],
+      "@agent-framework/context": [
+        "./packages/context/src/index.ts"
+      ],
+      "@agent-framework/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@agent-framework/evaluation": [
+        "./packages/evaluation/src/index.ts"
+      ],
+      "@agent-framework/knowledge": [
+        "./packages/knowledge/src/index.ts"
+      ],
+      "@agent-framework/llm": [
+        "./packages/llm/src/index.ts"
+      ],
+      "@agent-framework/memory": [
+        "./packages/memory/src/index.ts"
+      ],
+      "@agent-framework/observability": [
+        "./packages/observability/src/index.ts"
+      ],
+      "@agent-framework/orchestration": [
+        "./packages/orchestration/src/index.ts"
+      ],
+      "@agent-framework/security": [
+        "./packages/security/src/index.ts"
+      ],
+      "@agent-framework/tools": [
+        "./packages/tools/src/index.ts"
+      ],
+      "@agent-framework/production": [
+        "./packages/production/src/index.ts"
+      ],
+      "@agent-framework/provider-anthropic": [
+        "./packages/provider-anthropic/src/index.ts"
+      ]
     }
   },
-  "include": ["packages/*/src/**/*.ts", "examples/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "examples/**/*.ts",
+    "vitest.config.ts"
+  ]
 }

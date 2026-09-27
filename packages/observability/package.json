@@ -1,10 +1,9 @@
 {
   "name": "@agent-framework/observability",
   "version": "0.1.0",
-  "description": "Observability (planned): OpenTelemetry bridge, metrics, cost tracking, redaction",
+  "description": "Observability: OpenTelemetry tracing and metrics bridge, redaction, structured logs, cost tracking, run inspection",
   "license": "Apache-2.0",
   "type": "module",
-  "private": true,
   "sideEffects": false,
   "exports": {
     ".": {
@@ -21,5 +20,9 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run --root ../.. --project observability"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*",
+    "@opentelemetry/api": "^1.9.0"
   }
 }

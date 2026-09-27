@@ -1,10 +1,9 @@
 {
   "name": "@agent-framework/context",
   "version": "0.1.0",
-  "description": "Context engine (planned): selection, ranking, compression, summarization, token budgets",
+  "description": "Context engine: token budgets, prioritized context items, tool-result truncation, atomic tool turns, summarization",
   "license": "Apache-2.0",
   "type": "module",
-  "private": true,
   "sideEffects": false,
   "exports": {
     ".": {
@@ -21,5 +20,8 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run --root ../.. --project context"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*"
   }
 }

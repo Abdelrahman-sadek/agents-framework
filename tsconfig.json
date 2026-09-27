@@ -1,16 +1,44 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/core" },
-    { "path": "packages/llm" },
-    { "path": "packages/tools" },
-    { "path": "packages/context" },
-    { "path": "packages/knowledge" },
-    { "path": "packages/memory" },
-    { "path": "packages/orchestration" },
-    { "path": "packages/security" },
-    { "path": "packages/observability" },
-    { "path": "packages/evaluation" },
-    { "path": "packages/cli" }
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/llm"
+    },
+    {
+      "path": "packages/tools"
+    },
+    {
+      "path": "packages/context"
+    },
+    {
+      "path": "packages/knowledge"
+    },
+    {
+      "path": "packages/memory"
+    },
+    {
+      "path": "packages/orchestration"
+    },
+    {
+      "path": "packages/security"
+    },
+    {
+      "path": "packages/observability"
+    },
+    {
+      "path": "packages/evaluation"
+    },
+    {
+      "path": "packages/cli"
+    },
+    {
+      "path": "packages/production"
+    },
+    {
+      "path": "packages/provider-anthropic"
+    }
   ]
 }

@@ -1,4 +1,4 @@
-import type { Agent, AgentRunResult, AgentRuntime, ResumeOptions, RunOptions } from "./agent.js";
+import type { Agent, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions } from "./agent.js";
 import { passthroughContext, type ContextManager } from "./context.js";
 import {
   AgentError,
@@ -6,6 +6,8 @@ import {
   CancellationError,
   ConfigurationError,
   FrameworkError,
+  GuardrailError,
+  VerificationError,
   LimitExceededError,
   LLMError,
   OutputValidationError,
@@ -15,7 +17,9 @@ import {
   type LimitType,
   type SerializedError,
 } from "./errors.js";
-import type { AgentEvent, AgentEventPayloads, AgentEventType, EmitFn, EventCorrelation, EventSink } from "./events.js";
+import { createEventEmitter, type AgentEvent, type EventCorrelation, type EventEmitterHandle, type EventSink } from "./events.js";
+import { applyGuardrails, type GuardrailStage } from "./guardrail.js";
+import type { JsonSchema, Schema } from "./schema.js";
 import { resolveLimits, validateLimits } from "./limits.js";
 import {
   estimateCostUsd,
@@ -74,44 +78,6 @@ export function createRuntime(options: RuntimeOptions): AgentRuntime {
   return new DefaultAgentRuntime(options);
 }
 
-class RunEmitter {
-  readonly events: AgentEvent[] = [];
-  constructor(
-    private readonly state: AgentState,
-    private readonly sinks: readonly EventSink[],
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly onSinkError: (error: unknown, event: AgentEvent) => void,
-  ) {}
-
-  readonly emit: EmitFn = <K extends AgentEventType>(
-    type: K,
-    payload: AgentEventPayloads[K],
-    correlation?: EventCorrelation,
-  ): void => {
-    this.state.eventSequence += 1;
-    const event = {
-      eventId: this.ids.next("event"),
-      sequence: this.state.eventSequence,
-      runId: this.state.runId,
-      agentId: this.state.agentId,
-      occurredAt: this.clock.now().toISOString(),
-      type,
-      payload,
-      ...(correlation === undefined ? {} : { correlation }),
-    } as AgentEvent;
-    this.events.push(event);
-    for (const sink of this.sinks) {
-      try {
-        const maybe = sink.emit(event);
-        if (maybe instanceof Promise) maybe.catch((error: unknown) => this.onSinkError(error, event));
-      } catch (error) {
-        this.onSinkError(error, event);
-      }
-    }
-  };
-}
-
 interface Execution {
   agent: Agent<unknown>;
   state: AgentState;
@@ -119,7 +85,8 @@ interface Execution {
   capabilities: ModelCapabilities;
   toolDefs: LLMToolDefinition[];
   toolsByName: Map<string, AgentTool>;
-  emitter: RunEmitter;
+  emitter: EventEmitterHandle;
+  outputJsonSchema: JsonSchema | undefined;
   signal: AbortSignal;
   dispose(): void;
 }
@@ -172,6 +139,8 @@ class DefaultAgentRuntime implements AgentRuntime {
       steps: [],
       usage: emptyUsage(),
       pendingApprovals: [],
+      contextItems: [],
+      corrections: { output: 0, reflection: 0 },
       limits,
       metadata: options.metadata ?? {},
       eventSequence: 0,
@@ -185,7 +154,10 @@ class DefaultAgentRuntime implements AgentRuntime {
       ...(options.user === undefined ? {} : { userId: options.user.userId }),
       ...(options.user?.tenantId === undefined ? {} : { tenantId: options.user.tenantId }),
     });
-    await this.drive(exec, () => this.loop(exec));
+    await this.drive(exec, async () => {
+      await this.startRun(exec);
+      await this.loop(exec);
+    });
     return this.result<TOutput>(exec);
   }
 
@@ -246,6 +218,36 @@ class DefaultAgentRuntime implements AgentRuntime {
     return this.result<TOutput>(exec);
   }
 
+  /**
+   * Continue a run whose worker died (status still RUNNING in the store).
+   * Tool calls requested by the last model turn that have no recorded result
+   * are invoked again (tool idempotency keys protect side effects); then the
+   * loop continues from the last checkpoint.
+   */
+  async recover<TOutput>(agent: Agent<TOutput>, options: RecoverOptions): Promise<AgentRunResult<TOutput>> {
+    const { provider, capabilities } = await this.prepare(agent);
+    const state = await this.store.load(options.runId);
+    if (state === undefined) throw new ValidationError(`recover: run '${options.runId}' not found`);
+    if (state.agentId !== agent.id) throw new ValidationError(`recover: run '${options.runId}' belongs to agent '${state.agentId}'`);
+    if (state.status !== "RUNNING") throw new ValidationError(`recover: run '${options.runId}' is ${state.status}, not RUNNING`, { runId: state.runId });
+    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal);
+    for (const step of state.steps) {
+      if (step.status === "RUNNING") step.status = "FAILED";
+    }
+    const lastAssistant = [...state.messages].reverse().find((m) => m.role === "assistant");
+    const answered = new Set(state.messages.flatMap((m) => (m.role === "tool" ? [m.toolCallId] : [])));
+    const waiting = new Set(state.pendingApprovals.map((p) => p.toolCall.id));
+    const missing = lastAssistant?.role === "assistant" ? (lastAssistant.toolCalls ?? []).filter((c) => !answered.has(c.id) && !waiting.has(c.id)) : [];
+    const llmCallId = [...state.steps].reverse().find((s) => s.kind === "llm_call")?.llmCallId ?? "recovered";
+    exec.emitter.emit("AGENT_RECOVERED", { pendingToolCalls: missing.length });
+    await this.drive(exec, async () => {
+      await this.runToolCalls(exec, missing, llmCallId);
+      if (this.waitIfPending(exec)) return;
+      await this.loop(exec);
+    });
+    return this.result<TOutput>(exec);
+  }
+
   // ---------------------------------------------------------------- setup
 
   private async prepare<TOutput>(agent: Agent<TOutput>): Promise<{
@@ -298,7 +300,19 @@ class DefaultAgentRuntime implements AgentRuntime {
       capabilities,
       toolDefs: tools.map((t) => ({ name: t.name, description: t.description, parameters: t.parameters })),
       toolsByName: new Map(tools.map((t) => [t.name, t])),
-      emitter: new RunEmitter(state, this.sinks, this.clock, this.ids, this.options.onSinkError ?? (() => {})),
+      emitter: createEventEmitter({
+        runId: state.runId,
+        agentId: state.agentId,
+        sinks: this.sinks,
+        clock: this.clock,
+        ids: this.ids,
+        startSequence: state.eventSequence,
+        onSequence: (n) => {
+          state.eventSequence = n;
+        },
+        ...(this.options.onSinkError === undefined ? {} : { onSinkError: this.options.onSinkError }),
+      }),
+      outputJsonSchema: agent.config.outputJsonSchema ?? deriveJsonSchema(agent.config.output),
       signal: controller.signal,
       dispose: () => {
         clearTimeout(timer);
@@ -329,19 +343,26 @@ class DefaultAgentRuntime implements AgentRuntime {
       }
       const { response, llmCallId } = await this.callModel(exec);
       if (response.toolCalls.length === 0) {
-        this.complete(exec, response.content);
-        return;
+        if (await this.complete(exec, response.content)) return;
+        continue;
       }
-      for (const call of response.toolCalls) {
-        this.throwIfAborted(exec);
-        if (state.usage.toolCalls >= state.limits.maxToolCalls) {
-          throw this.limitExceeded(exec, "toolCalls", state.limits.maxToolCalls, state.usage.toolCalls + 1);
-        }
-        state.usage.toolCalls += 1;
-        await this.invokeTool(exec, call, llmCallId);
-      }
+      // Checkpoint before side effects, so a crashed worker can recover exactly these tool calls.
+      await this.checkpoint(exec);
+      await this.runToolCalls(exec, response.toolCalls, llmCallId);
       if (this.waitIfPending(exec)) return;
       await this.checkpoint(exec);
+    }
+  }
+
+  private async runToolCalls(exec: Execution, calls: readonly LLMToolCall[], llmCallId: string): Promise<void> {
+    const { state } = exec;
+    for (const call of calls) {
+      this.throwIfAborted(exec);
+      if (state.usage.toolCalls >= state.limits.maxToolCalls) {
+        throw this.limitExceeded(exec, "toolCalls", state.limits.maxToolCalls, state.usage.toolCalls + 1);
+      }
+      state.usage.toolCalls += 1;
+      await this.invokeTool(exec, call, llmCallId);
     }
   }
 
@@ -353,14 +374,28 @@ class DefaultAgentRuntime implements AgentRuntime {
       runId: state.runId,
       agentId: state.agentId,
       messages: state.messages,
+      items: state.contextItems,
       ...(capabilities.contextWindowTokens === undefined ? {} : { maxTokens: capabilities.contextWindowTokens }),
     });
+    if ((assembled.omitted?.length ?? 0) > 0) {
+      emitter.emit(
+        "CONTEXT_ASSEMBLED",
+        {
+          messageCount: assembled.messages.length,
+          ...(assembled.estimatedTokens === undefined ? {} : { estimatedTokens: assembled.estimatedTokens }),
+          ...(assembled.omitted === undefined ? {} : { omitted: assembled.omitted }),
+        },
+        { stepId: step.stepId, llmCallId },
+      );
+    }
     const { settings, output } = exec.agent.config;
     const request: LLMRequest = {
       modelId: capabilities.modelId,
       messages: assembled.messages,
       ...(exec.toolDefs.length > 0 ? { tools: exec.toolDefs } : {}),
-      ...(output !== undefined && capabilities.structuredOutput ? { responseFormat: { type: "json" as const } } : {}),
+      ...(output !== undefined && capabilities.structuredOutput
+        ? { responseFormat: { type: "json" as const, ...(exec.outputJsonSchema === undefined ? {} : { schema: exec.outputJsonSchema }) } }
+        : {}),
       ...(settings === undefined ? {} : { settings }),
       signal: exec.signal,
       metadata: { runId: state.runId, agentId: state.agentId, llmCallId },
@@ -485,10 +520,21 @@ class DefaultAgentRuntime implements AgentRuntime {
     step.attempts = result.attempts;
 
     switch (result.status) {
-      case "success":
-        this.pushToolMessage(exec, call, typeof result.output === "string" ? result.output : JSON.stringify(result.output ?? null), false);
+      case "success": {
+        const raw = typeof result.output === "string" ? result.output : JSON.stringify(result.output ?? null);
+        let content: string;
+        let isError = false;
+        try {
+          content = await this.guard(exec, "tool_result", raw, call.name);
+        } catch (error) {
+          if (!(error instanceof GuardrailError)) throw error;
+          content = errorContent(error.toJSON());
+          isError = true;
+        }
+        this.pushToolMessage(exec, call, content, isError);
         this.completeStep(exec, step);
         return;
+      }
       case "approval_required": {
         if (result.approval === undefined) {
           throw new AgentError(`Tool invoker returned approval_required without an approval request`, { runId: state.runId });
@@ -525,26 +571,142 @@ class DefaultAgentRuntime implements AgentRuntime {
     return true;
   }
 
-  private complete(exec: Execution, content: string): void {
-    const { state } = exec;
-    const schema = exec.agent.config.output;
-    if (schema === undefined) {
-      state.output = content;
-    } else {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(stripCodeFence(content));
-      } catch (cause) {
-        throw new OutputValidationError("Model output is not valid JSON", { cause, runId: state.runId });
-      }
-      const result = schema.safeParse(parsed);
-      if (!result.success) {
-        throw new OutputValidationError(`Model output failed schema validation: ${result.error.message}`, { runId: state.runId });
-      }
-      state.output = result.data;
+  /** Run input guardrails and context providers once, before the first model call. */
+  private async startRun(exec: Execution): Promise<void> {
+    const { state, emitter } = exec;
+    const index = state.messages.findIndex((m) => m.role === "user");
+    const message = state.messages[index];
+    let query = message?.content ?? "";
+    if (message !== undefined) {
+      query = await this.guard(exec, "input", message.content);
+      state.messages[index] = { role: "user", content: query };
     }
+    for (const provider of exec.agent.config.context ?? []) {
+      this.throwIfAborted(exec);
+      const startedAt = Date.now();
+      const items = await raceAbort(
+        provider.provide({
+          runId: state.runId,
+          agentId: state.agentId,
+          input: state.input,
+          query,
+          ...(state.user === undefined ? {} : { user: state.user }),
+          metadata: state.metadata,
+          signal: exec.signal,
+          emit: emitter.emit,
+        }),
+        exec.signal,
+      );
+      state.contextItems.push(...items);
+      emitter.emit("CONTEXT_RETRIEVED", { provider: provider.name, itemCount: items.length, durationMs: Date.now() - startedAt });
+    }
+  }
+
+  /** Apply guardrails for a stage. Returns the (possibly redacted) content; throws GuardrailError when blocked. */
+  private async guard(exec: Execution, stage: GuardrailStage, content: string, toolName?: string): Promise<string> {
+    const guardrails = exec.agent.config.guardrails ?? [];
+    if (guardrails.length === 0) return content;
+    const { state, emitter } = exec;
+    const outcome = await applyGuardrails(guardrails, content, {
+      stage,
+      runId: state.runId,
+      agentId: state.agentId,
+      ...(state.user === undefined ? {} : { user: state.user }),
+      ...(toolName === undefined ? {} : { toolName }),
+    });
+    const tool = toolName === undefined ? {} : { toolName };
+    for (const r of outcome.redactions) {
+      emitter.emit("GUARDRAIL_TRIGGERED", { guardrail: r.guardrail, stage, action: "redact", reason: r.reason, ...tool });
+    }
+    if (outcome.blocked !== undefined) {
+      emitter.emit("GUARDRAIL_TRIGGERED", { guardrail: outcome.blocked.guardrail, stage, action: "block", reason: outcome.blocked.reason, ...tool });
+      throw new GuardrailError(`Content blocked by guardrail '${outcome.blocked.guardrail}' at ${stage}`, {
+        runId: state.runId,
+        metadata: { guardrail: outcome.blocked.guardrail, stage },
+      });
+    }
+    return outcome.content;
+  }
+
+  /**
+   * Accept a final answer: output guardrails → schema validation (with
+   * correction) → verification (with revision). Returns false when the model
+   * was asked to try again.
+   */
+  private async complete(exec: Execution, content: string): Promise<boolean> {
+    const { state, emitter } = exec;
+    const text = await this.guard(exec, "output", content);
+    let output: unknown = text;
+
+    const schema = exec.agent.config.output;
+    if (schema !== undefined) {
+      const parsed = parseOutput(schema, text, state.runId);
+      if (!parsed.ok) {
+        const willRetry = state.corrections.output < state.limits.maxOutputCorrections;
+        emitter.emit("OUTPUT_VALIDATION_FAILED", { attempt: state.corrections.output + 1, willRetry, error: parsed.error.toJSON() });
+        if (!willRetry) throw parsed.error;
+        state.corrections.output += 1;
+        state.messages.push({
+          role: "user",
+          content: `Your previous answer was rejected: ${parsed.error.message}. Reply again with only a JSON value that matches the required schema.`,
+        });
+        return false;
+      }
+      output = parsed.value;
+    }
+
+    const verifiers = exec.agent.config.reflection?.verifiers ?? [];
+    if (verifiers.length > 0) {
+      const attempt = state.corrections.reflection + 1;
+      const failures: { verifier: string; feedback: string }[] = [];
+      for (const verifier of verifiers) {
+        this.throwIfAborted(exec);
+        let result;
+        try {
+          result = await verifier.verify({
+            runId: state.runId,
+            agentId: state.agentId,
+            input: state.input,
+            text,
+            output,
+            contextItems: state.contextItems,
+            messages: state.messages,
+            signal: exec.signal,
+          });
+        } catch (error) {
+          this.throwIfAborted(exec);
+          result = { passed: false, feedback: `Verifier error: ${error instanceof Error ? error.message : String(error)}` };
+        }
+        emitter.emit("VERIFICATION_COMPLETED", {
+          verifier: verifier.name,
+          passed: result.passed,
+          attempt,
+          ...(result.score === undefined ? {} : { score: result.score }),
+        });
+        if (!result.passed) failures.push({ verifier: verifier.name, feedback: result.feedback ?? "Failed verification" });
+      }
+      if (failures.length > 0) {
+        const willRetry = state.corrections.reflection < state.limits.maxReflectionAttempts;
+        emitter.emit("VERIFICATION_FAILED", { attempt, willRetry, failures });
+        if (!willRetry) {
+          throw new VerificationError(`Answer failed verification: ${failures.map((f) => f.verifier).join(", ")}`, {
+            runId: state.runId,
+            metadata: { failures },
+          });
+        }
+        state.corrections.reflection += 1;
+        state.messages.push({
+          role: "user",
+          content: `Your previous answer did not pass review:\n${failures.map((f) => `- ${f.verifier}: ${f.feedback}`).join("\n")}\nRevise your answer to address every point.`,
+        });
+        return false;
+      }
+    }
+
+    state.output = output;
     state.status = "COMPLETED";
-    exec.emitter.emit("AGENT_COMPLETED", { usage: { ...state.usage } });
+    emitter.emit("AGENT_COMPLETED", { usage: { ...state.usage } });
+    return true;
   }
 
   private fail(exec: Execution, error: unknown): void {
@@ -654,6 +816,35 @@ function renderInput(input: unknown): string {
 
 function errorContent(error: SerializedError): string {
   return JSON.stringify({ error: { code: error.code, message: error.message } });
+}
+
+function parseOutput<T>(
+  schema: Schema<T>,
+  text: string,
+  runId: string,
+): { ok: true; value: T } | { ok: false; error: OutputValidationError } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripCodeFence(text));
+  } catch (cause) {
+    return { ok: false, error: new OutputValidationError("Model output is not valid JSON", { cause, runId }) };
+  }
+  const result = schema.safeParse(parsed);
+  if (!result.success) {
+    return { ok: false, error: new OutputValidationError(`Model output failed schema validation: ${result.error.message}`, { runId }) };
+  }
+  return { ok: true, value: result.data };
+}
+
+function deriveJsonSchema(schema: unknown): JsonSchema | undefined {
+  const candidate = schema as { toJSONSchema?: unknown } | undefined;
+  if (candidate === undefined || typeof candidate.toJSONSchema !== "function") return undefined;
+  try {
+    const { $schema: _ignored, ...json } = (candidate.toJSONSchema as () => Record<string, unknown>).call(schema);
+    return json;
+  } catch {
+    return undefined;
+  }
 }
 
 function stripCodeFence(text: string): string {

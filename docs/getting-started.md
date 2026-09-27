@@ -87,7 +87,7 @@ export const myProvider: LLMProvider = {
 };
 ```
 
-See [Core runtime › LLM providers](./architecture/core-runtime.md#llm-providers) for the full contract. First-party adapters are on the [roadmap](./roadmap.md).
+Ready-made adapters: `anthropicProvider()` from `@agent-framework/provider-anthropic` (official SDK) and `openAICompatibleProvider({ id, baseURL, apiKey })` from `@agent-framework/llm` (OpenAI, OpenRouter, vLLM, Ollama, LM Studio). See [Models and providers](./models.md), and [Core runtime › LLM providers](./architecture/core-runtime.md#llm-providers) for the contract.
 
 ## 5. Observe what happened
 
@@ -103,6 +103,9 @@ for (const e of events.events) console.log(e.sequence, e.type, e.correlation);
 Tool calls are also written to the tool runtime's audit sink (`new ToolRuntime({ audit })`).
 
 ## Next
+
+- [Examples](./examples/README.md): research, RAG, orchestrator, approval and enterprise agents.
+- `pnpm --filter @agent-framework/cli build && npx agent create my-agent` scaffolds a new agent ([CLI](./cli.md)).
 
 - [Agents guide](./agents.md): limits, cancellation, structured output, approvals, state.
 - [Tools guide](./tools.md): permissions, approval, retries, idempotency, rate limits, audit.

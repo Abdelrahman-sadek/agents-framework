@@ -22,6 +22,9 @@ ADRs are stored in `docs/decisions/`. They record why the framework is built the
 - [016-package-boundaries.md](./016-package-boundaries.md)
 - [017-decision-engine.md](./017-decision-engine.md)
 - [018-tool-system.md](./018-tool-system.md)
+- [019-production-runtime.md](./019-production-runtime.md)
+- [020-provider-adapters.md](./020-provider-adapters.md)
+- [021-manifest-and-cli.md](./021-manifest-and-cli.md)
 
 ## Open decisions and risks
 

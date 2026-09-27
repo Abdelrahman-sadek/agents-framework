@@ -1,13 +1,30 @@
 # Documentation
 
-## Guides
+## Start here
 
-| Guide | Status |
+- [Getting started](./getting-started.md)
+- [Agents](./agents.md): define, run, limits, cancellation, structured output, approvals, recovery
+- [Tools](./tools.md): schemas, permissions, approval, reliability, audit
+- [Models and providers](./models.md): Anthropic, OpenAI-compatible and local models, gateway wrappers
+- [Troubleshooting](./troubleshooting.md)
+
+## Subsystem guides
+
+| Guide | Package |
 | --- | --- |
-| [Getting started](./getting-started.md) | ✅ |
-| [Agents](./agents.md): define, run, limits, cancellation, structured output, approvals | ✅ |
-| [Tools](./tools.md): schemas, permissions, approval, reliability, audit, adapters | ✅ |
-| [Troubleshooting](./troubleshooting.md) | ✅ |
+| [Context engine](./context.md) | `@agent-framework/context` |
+| [Knowledge / RAG](./knowledge.md) | `@agent-framework/knowledge` |
+| [Memory](./memory.md) | `@agent-framework/memory` |
+| [Planning](./planning.md) | `@agent-framework/orchestration` |
+| [Reflection and verification](./reflection.md) | `@agent-framework/core` |
+| [Orchestration](./orchestration.md) | `@agent-framework/orchestration` |
+| [Multi-agent systems](./multi-agent.md) | `@agent-framework/orchestration` |
+| [Security](./security.md) | `@agent-framework/security`, `@agent-framework/tools` |
+| [Guardrails](./guardrails.md) | `@agent-framework/security` |
+| [Observability](./observability.md) | `@agent-framework/observability` |
+| [Evaluation](./evaluation.md) | `@agent-framework/evaluation` |
+| [Production](./production.md) | `@agent-framework/production` |
+| [CLI and manifests](./cli.md) | `@agent-framework/cli` |
 
 ## Architecture
 
@@ -19,8 +36,8 @@
 | [Events](./architecture/events.md) | Event model and envelope |
 | [Errors](./architecture/errors.md) | Error codes, categories, retryability |
 | [Configuration](./architecture/configuration.md) | Framework / agent / run configuration layers |
-| [Extension points](./architecture/extension-points.md) | Decision engine, context, skills, sandbox, adapters |
-| [Lifecycles](./architecture/lifecycles.md) | State machines for runs, tools, approvals, and later phases |
+| [Extension points](./architecture/extension-points.md) | Ports, decision engine, skills, sandbox, adapters |
+| [Lifecycles](./architecture/lifecycles.md) | State machines |
 | [Data flow](./architecture/data-flow.md) | How data moves through a run |
 | [Data model](./data-model/README.md) | Entities and persisted state |
 | [Concepts](./concepts/README.md) | Glossary |
@@ -35,21 +52,4 @@
 - [Architectural Decision Records](./decisions/README.md)
 - [Open questions and risks](./decisions/open-questions.md)
 - [Roadmap](./roadmap.md)
-
-## Subsystems by phase
-
-The subsystem guides below are written when their phase ships. Until then, the architecture overview describes the intended design.
-
-| Topic | Phase | Design today |
-| --- | --- | --- |
-| Structured outputs | 3 | [Agents › Structured output](./agents.md#structured-output) |
-| Context engine | 4 | [Architecture §4.3](./architecture/README.md#43-context-engine), [`ContextManager` port](./architecture/extension-points.md#context-manager) |
-| Knowledge / RAG | 5 | [Architecture §4.5](./architecture/README.md#45-knowledge--rag) |
-| Memory | 6 | [Architecture §4.4](./architecture/README.md#44-memory) |
-| Planning | 7 | [Architecture §4.6](./architecture/README.md#46-planning) |
-| Reflection | 8 | [Architecture §4.7](./architecture/README.md#47-reflection--verification) |
-| Orchestration / multi-agent | 9–10 | [Architecture §4.8](./architecture/README.md#48-orchestration) |
-| Guardrails / security | 11 | [Security](./security/README.md) |
-| Observability | 12 | [Events](./architecture/events.md), [ADR 007](./decisions/007-opentelemetry.md) |
-| Evaluation | 13 | [Roadmap](./roadmap.md#phase-13--evaluation) |
-| Production | 14 | [Core runtime › Durability](./architecture/core-runtime.md#durability-boundary), [ADR 013](./decisions/013-temporal-durable-execution.md) |
+- [Examples](./examples/README.md)

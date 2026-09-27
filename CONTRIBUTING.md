@@ -16,7 +16,7 @@ pnpm check        # typecheck + lint + test
 | `pnpm lint` | ESLint (flat config, `typescript-eslint`) |
 | `pnpm test` | Vitest across packages (`pnpm test --project tools` for one package) |
 | `pnpm build` | Emits `dist/` for every package |
-| `pnpm example:hello` / `example:approval` | Runs the examples from source |
+| `pnpm examples` (or `pnpm example:<name>`) | Runs the examples from source |
 
 Tests and examples import packages from `src/` through path aliases, so no build step is needed while developing.
 

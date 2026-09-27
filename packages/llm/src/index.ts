@@ -34,3 +34,8 @@ export function withFallbacks(primary: LLMModelSelector, ...fallbacks: LLMModelS
 }
 
 export type { LLMModelSelector, ModelCapabilities };
+
+export { openAICompatibleProvider, toChatMessages } from "./openai-compatible.js";
+export type { OpenAICompatibleOptions } from "./openai-compatible.js";
+export { withCircuitBreaker, withFallback, withRateLimit } from "./gateway.js";
+export type { CircuitBreakerOptions, CircuitState, FallbackTarget } from "./gateway.js";

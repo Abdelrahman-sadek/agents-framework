@@ -101,11 +101,11 @@ const result = await agent.run({ input: "…" });
 if (result.status === "COMPLETED") result.output.findings; // typed
 ```
 
-When `output` is set, the runtime asks models that support it for JSON (`responseFormat`), parses the final answer (a fenced ```json block is accepted) and validates it. Invalid output fails the run with `OUTPUT_VALIDATION_ERROR`.
+When `output` is set, the runtime asks models that support it for JSON (`responseFormat`), parses the final answer (a fenced ```json block is accepted) and validates it. If it is still invalid after the allowed corrections, the run fails with `OUTPUT_VALIDATION_ERROR`.
 
 Any object with a Zod-compatible `safeParse` works as a schema; the core does not depend on Zod.
 
-> Phase 3 adds the correction loop (re-asking the model with the validation error), JSON Schema response formats, and output validation events.
+Invalid output is sent back to the model with the validation error and retried (`OUTPUT_VALIDATION_FAILED`, up to `limits.maxOutputCorrections`, default 1). Zod schemas also provide the JSON Schema used as the provider `responseFormat`; set `outputJsonSchema` for other validators.
 
 ## Human approval
 
@@ -137,6 +137,21 @@ const state = await runtime.getState(runId);
 ```
 
 The default store is in-memory. Production deployments provide a durable `RunStateStore` (see [Core runtime › Durability](./architecture/core-runtime.md#durability-boundary)).
+
+## Context, guardrails and reflection
+
+```ts
+defineAgent({
+  ...,
+  context: [handbook.asContextProvider(), memory.asContextProvider()],   // see context.md, knowledge.md, memory.md
+  guardrails: [piiGuardrail(), promptInjectionGuardrail()],             // see guardrails.md
+  reflection: { verifiers: [citationVerifier()] },                      // see reflection.md
+});
+```
+
+## Crash recovery
+
+If the process running a run dies, its state stays `RUNNING`. `agent.recover({ runId })` (or `runtime.recover`) re-invokes the tool calls of the last model turn that have no recorded result, then continues. `AgentWorker` in `@agent-framework/production` does this automatically ([Production](./production.md)).
 
 ## Testing agents
 
