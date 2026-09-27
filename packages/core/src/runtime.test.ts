@@ -281,3 +281,14 @@ describe("structured output", () => {
     expect(provider.requests[0]?.responseFormat).toMatchObject({ type: "json", schema: { type: "object", required: ["summary", "confidence"] } });
   });
 });
+
+describe("InMemoryRunStateStore.claim", () => {
+  test("is a compare-and-set on status", async () => {
+    const store = new InMemoryRunStateStore();
+    await store.save({ runId: "r1", status: "WAITING_FOR_APPROVAL" } as never);
+    expect(await store.claim("r1", "WAITING_FOR_APPROVAL", "RUNNING")).toBe(true);
+    expect(await store.claim("r1", "WAITING_FOR_APPROVAL", "RUNNING")).toBe(false);
+    expect(await store.claim("missing", "WAITING_FOR_APPROVAL", "RUNNING")).toBe(false);
+    expect((await store.load("r1"))?.status).toBe("RUNNING");
+  });
+});

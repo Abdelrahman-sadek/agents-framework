@@ -11,13 +11,15 @@ export interface HttpToolConfig<TInput> extends Omit<ToolConfig<TInput, unknown>
   request: (input: TInput, secret: (name: string) => Promise<string>) => Promise<{ url: string; method?: string; headers?: Record<string, string>; body?: string }> | { url: string; method?: string; headers?: Record<string, string>; body?: string };
   secrets?: SecretProvider;
   maxBytes?: number;
+  /** Custom transport (see `SafeFetchOptions.fetchImpl`): skips connect-time address pinning. For tests. */
+  fetchImpl?: typeof fetch;
   /** Map the response to what the model sees (default: status + body text, truncated). */
   mapResponse?: (response: { status: number; body: string }) => unknown;
 }
 
 /** HTTP tool adapter: every request (and redirect) passes the egress policy; secrets stay out of model context. */
 export function defineHttpTool<TInput>(config: HttpToolConfig<TInput>): Tool<TInput, unknown> {
-  const { egress, request, secrets, maxBytes, mapResponse, ...rest } = config;
+  const { egress, request, secrets, maxBytes, fetchImpl, mapResponse, ...rest } = config;
   return defineTool<TInput, unknown>({
     ...rest,
     kind: "http",
@@ -31,7 +33,7 @@ export function defineHttpTool<TInput>(config: HttpToolConfig<TInput>): Tool<TIn
       const response = await safeFetch(
         spec.url,
         { method: spec.method ?? "GET", ...(spec.headers === undefined ? {} : { headers: spec.headers }), ...(spec.body === undefined ? {} : { body: spec.body }) },
-        { policy: egress, signal: ctx.signal, ...(maxBytes === undefined ? {} : { maxBytes }) },
+        { policy: egress, signal: ctx.signal, ...(maxBytes === undefined ? {} : { maxBytes }), ...(fetchImpl === undefined ? {} : { fetchImpl }) },
       );
       if (response.status >= 500) throw new ToolError(`Upstream returned ${response.status}`, { retryable: true });
       return mapResponse !== undefined ? mapResponse(response) : { status: response.status, body: response.body.slice(0, 20_000) };

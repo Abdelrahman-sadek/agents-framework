@@ -69,6 +69,11 @@ describe("command tool", () => {
     [{ command: "rm", args: ["-rf", "/"] }, "error"],
     [{ command: "node", args: ["-e", "require('fs')"] }, "error"],
     [{ command: "ls", args: ["--color=always"] }, "error"],
+    [{ command: "ls", args: ["/etc"] }, "error"],
+    [{ command: "ls", args: ["../"] }, "error"],
+    [{ command: "ls", args: ["src/../../"] }, "error"],
+    [{ command: "ls", args: ["~/"] }, "error"],
+    [{ command: "ls", args: ["-a", "./src"] }, "success"],
   ])("rejects %j", async (input, status) => {
     expect((await run(exec, input)).status).toBe(status);
   });

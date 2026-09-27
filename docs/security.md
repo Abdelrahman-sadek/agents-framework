@@ -40,7 +40,7 @@ const weather = defineHttpTool({
 });
 ```
 
-Egress is deny-by-default. Only allow-listed hosts are reachable, only over `https:`, with no credentials in the URL. Addresses are resolved, and private, loopback, link-local or metadata addresses are blocked (this also stops DNS rebinding). Every redirect hop is re-checked, and response size and time are capped. Secrets are resolved inside `execute`, so they never reach the model, run state, events or audit.
+Egress is deny-by-default. Only allow-listed hosts are reachable, only over `https:`, with no credentials in the URL. Addresses are resolved, and private, loopback, link-local or metadata addresses are blocked (IPv6 forms that embed an IPv4 address included). `safeFetch` re-checks the address when the socket connects, so the address that was checked is the one used (no DNS-rebinding window); a custom `fetchImpl` skips that pinning. Every redirect hop is re-checked, and response size and time are capped. Secrets are resolved inside `execute`, so they never reach the model, run state, events or audit.
 
 ## Checklist
 

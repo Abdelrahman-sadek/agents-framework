@@ -95,6 +95,8 @@ interface Execution {
 
 class DefaultAgentRuntime implements AgentRuntime {
   private readonly store: RunStateStore;
+  /** Runs this process is resuming; the fallback guard for stores without `claim()`. */
+  private readonly resuming = new Set<string>();
   private readonly context: ContextManager;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
@@ -164,6 +166,18 @@ class DefaultAgentRuntime implements AgentRuntime {
   }
 
   async resume<TOutput>(agent: Agent<TOutput>, options: ResumeOptions): Promise<AgentRunResult<TOutput>> {
+    if (this.resuming.has(options.runId)) {
+      throw new ValidationError(`resume: run '${options.runId}' is already being resumed`, { runId: options.runId });
+    }
+    this.resuming.add(options.runId);
+    try {
+      return await this.resumeClaimed(agent, options);
+    } finally {
+      this.resuming.delete(options.runId);
+    }
+  }
+
+  private async resumeClaimed<TOutput>(agent: Agent<TOutput>, options: ResumeOptions): Promise<AgentRunResult<TOutput>> {
     const { provider, capabilities } = await this.prepare(agent);
     const state = await this.store.load(options.runId);
     if (state === undefined) throw new ValidationError(`resume: run '${options.runId}' not found`);
@@ -189,6 +203,10 @@ class DefaultAgentRuntime implements AgentRuntime {
       state.limits = { ...state.limits, timeoutMs: options.timeoutMs };
     }
 
+    // Compare-and-set so concurrent resumes (other processes included) cannot both run the approved tools.
+    if (this.store.claim !== undefined && !(await this.store.claim(state.runId, "WAITING_FOR_APPROVAL", "RUNNING"))) {
+      throw new ValidationError(`resume: run '${options.runId}' is already being resumed`, { runId: state.runId });
+    }
     state.status = "RUNNING";
     const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal, options);
     exec.emitter.emit("AGENT_RESUMED", {

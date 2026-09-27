@@ -74,4 +74,5 @@ Temporal or another workflow engine can drive the same `run` / `resume` / `recov
 
 - `createHealthCheck({ db: () => pool.query("select 1"), queue: ..., model: { check: ping, critical: false } })` → `ok | degraded | down`.
 - Retention: `PostgresRunStateStore.deleteOlderThan(date)` for terminal runs, `memory.purgeExpired()`, and `forget()` for data deletion.
+- Concurrent approvals: `resume()` claims the run with `RunStateStore.claim()` (an atomic status compare-and-set), so only one of several concurrent resumes executes the approved tools. Custom durable stores should implement it.
 - SQLite (`openSqlite`, `SqliteRunStateStore`, `SqliteJobQueue`) gives durable single-node and development setups with no extra services (Node ≥ 22.5).

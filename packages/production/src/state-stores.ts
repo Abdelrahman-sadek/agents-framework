@@ -1,4 +1,4 @@
-import type { AgentState, RunStateStore } from "@agent-farmework/core";
+import type { AgentState, AgentStatus, RunStateStore } from "@agent-farmework/core";
 import type { AuditSink, IdempotencyStore, ToolAuditRecord } from "@agent-farmework/tools";
 import { tableName, type SqlClient, type SqliteDatabase } from "./sql.js";
 
@@ -33,6 +33,14 @@ export class PostgresRunStateStore implements RunStateStore {
       [state.runId, state.agentId, state.user?.tenantId ?? null, state.status, JSON.stringify(state), state.createdAt, state.updatedAt],
     );
   }
+  async claim(runId: string, from: AgentStatus, to: AgentStatus): Promise<boolean> {
+    const { rows } = await this.client.query(
+      `UPDATE ${this.table} SET status = $3, state = jsonb_set(state, '{status}', to_jsonb($3::text)), updated_at = now()
+       WHERE run_id = $1 AND status = $2 RETURNING run_id`,
+      [runId, from, to],
+    );
+    return rows.length === 1;
+  }
   /** Data retention: delete terminal runs older than `before`. Returns the count. */
   async deleteOlderThan(before: Date): Promise<number> {
     const { rows } = await this.client.query<{ n: number }>(
@@ -61,6 +69,12 @@ export class SqliteRunStateStore implements RunStateStore {
          ON CONFLICT(run_id) DO UPDATE SET status = excluded.status, state = excluded.state, updated_at = excluded.updated_at`,
       )
       .run(state.runId, state.agentId, state.user?.tenantId ?? null, state.status, JSON.stringify(state), state.createdAt, state.updatedAt);
+  }
+  async claim(runId: string, from: AgentStatus, to: AgentStatus): Promise<boolean> {
+    const result = this.db
+      .prepare("UPDATE agent_runs SET status = ?, state = json_set(state, '$.status', ?) WHERE run_id = ? AND status = ?")
+      .run(to, to, runId, from) as { changes?: number | bigint } | undefined;
+    return Number(result?.changes ?? 0) === 1;
   }
 }
 
