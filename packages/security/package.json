@@ -1,10 +1,9 @@
 {
   "name": "@agent-framework/security",
   "version": "0.1.0",
-  "description": "Security (planned): identity, RBAC/ABAC, guardrails, tenant isolation, audit",
+  "description": "Security: guardrails (PII, prompt injection, content, secrets), RBAC/ABAC and tenant policies, SSRF-safe egress and HTTP tools, secrets, identity mapping",
   "license": "Apache-2.0",
   "type": "module",
-  "private": true,
   "sideEffects": false,
   "exports": {
     ".": {
@@ -21,5 +20,10 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run --root ../.. --project security"
+  },
+  "dependencies": {
+    "@agent-framework/core": "workspace:*",
+    "@agent-framework/tools": "workspace:*",
+    "zod": "^4.1.0"
   }
 }
