@@ -16,7 +16,7 @@ export interface ToolAuditRecord {
   toolKind: string;
   outcome: ToolInvocationStatus;
   authorization?: { allowed: boolean; policy: string; reason: string };
-  approval?: { approvalId: string; decision: "requested" | "approved" | "rejected"; decidedBy?: string };
+  approval?: { approvalId: string; decision: "requested" | "approved" | "modified" | "rejected"; decidedBy?: string };
   /** Validated input, or "[REDACTED]" for sensitive tools. Absent when the input never validated. */
   input?: unknown;
   attempts: number;

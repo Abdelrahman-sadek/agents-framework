@@ -13,6 +13,7 @@ import {
   type LLMProvider,
   type LLMRequest,
   type LLMResponse,
+  type LLMStreamEvent,
   type ModelCapabilities,
   type ModelPricing,
 } from "@agent-framework/core";
@@ -134,29 +135,44 @@ export function anthropicProvider(options: AnthropicProviderOptions = {}): LLMPr
       return { providerId: id, modelId, ...base, ...ANTHROPIC_MODELS[modelId], ...options.models?.[modelId] };
     },
     async generate(request: LLMRequest): Promise<LLMResponse> {
-      const { system, messages } = toAnthropicMessages(request.messages);
-      const params: Anthropic.MessageCreateParamsNonStreaming = {
-        model: request.modelId,
-        max_tokens: request.settings?.maxOutputTokens ?? options.maxTokens ?? 16_000,
-        messages,
-        ...(system === undefined ? {} : { system }),
-        ...(request.tools === undefined || request.tools.length === 0
-          ? {}
-          : { tools: request.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters as Anthropic.Tool.InputSchema })) }),
-        ...(request.settings?.stopSequences === undefined ? {} : { stop_sequences: [...request.settings.stopSequences] }),
-        // Sampling parameters are rejected by current models; only sent when the agent sets them explicitly.
-        ...(request.settings?.temperature === undefined ? {} : { temperature: request.settings.temperature }),
-        ...(request.settings?.topP === undefined ? {} : { top_p: request.settings.topP }),
-        ...(request.responseFormat?.schema === undefined
-          ? {}
-          : { output_config: { format: { type: "json_schema", schema: request.responseFormat.schema as Record<string, unknown> } } }),
-      };
       try {
-        const message = await client.messages.create(params, request.signal === undefined ? {} : { signal: request.signal });
+        const message = await client.messages.create(buildParams(request), request.signal === undefined ? {} : { signal: request.signal });
         return fromAnthropicResponse(message);
       } catch (error) {
         throw normalizeAnthropicError(error);
       }
     },
+    async *stream(request: LLMRequest): AsyncIterable<LLMStreamEvent> {
+      try {
+        const stream = client.messages.stream(buildParams(request), request.signal === undefined ? {} : { signal: request.signal });
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") yield { type: "content_delta", delta: event.delta.text };
+        }
+        yield { type: "done", response: fromAnthropicResponse(await stream.finalMessage()) };
+      } catch (error) {
+        throw normalizeAnthropicError(error);
+      }
+    },
   };
+
+  function buildParams(request: LLMRequest): Anthropic.MessageCreateParamsNonStreaming {
+    const { system, messages } = toAnthropicMessages(request.messages);
+    const params: Anthropic.MessageCreateParamsNonStreaming = {
+      model: request.modelId,
+      max_tokens: request.settings?.maxOutputTokens ?? options.maxTokens ?? 16_000,
+      messages,
+      ...(system === undefined ? {} : { system }),
+      ...(request.tools === undefined || request.tools.length === 0
+        ? {}
+        : { tools: request.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters as Anthropic.Tool.InputSchema })) }),
+      ...(request.settings?.stopSequences === undefined ? {} : { stop_sequences: [...request.settings.stopSequences] }),
+      // Sampling parameters are rejected by current models; only sent when the agent sets them explicitly.
+      ...(request.settings?.temperature === undefined ? {} : { temperature: request.settings.temperature }),
+      ...(request.settings?.topP === undefined ? {} : { top_p: request.settings.topP }),
+      ...(request.responseFormat?.schema === undefined
+        ? {}
+        : { output_config: { format: { type: "json_schema", schema: request.responseFormat.schema as Record<string, unknown> } } }),
+    };
+    return params;
+  }
 }

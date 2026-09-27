@@ -39,3 +39,5 @@ export { openAICompatibleProvider, toChatMessages } from "./openai-compatible.js
 export type { OpenAICompatibleOptions } from "./openai-compatible.js";
 export { withCircuitBreaker, withFallback, withRateLimit } from "./gateway.js";
 export type { CircuitBreakerOptions, CircuitState, FallbackTarget } from "./gateway.js";
+export { createModelRouter } from "./router.js";
+export type { ModelRouterOptions, RouteCandidate, RoutingStrategy } from "./router.js";

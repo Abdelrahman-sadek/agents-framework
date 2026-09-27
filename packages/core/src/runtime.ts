@@ -1,4 +1,4 @@
-import type { Agent, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions } from "./agent.js";
+import type { Agent, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions, StreamCallbacks } from "./agent.js";
 import { passthroughContext, type ContextManager } from "./context.js";
 import {
   AgentError,
@@ -26,6 +26,7 @@ import {
   type LLMProvider,
   type LLMRequest,
   type LLMResponse,
+  type LLMStreamEvent,
   type LLMToolCall,
   type LLMToolDefinition,
   type ModelCapabilities,
@@ -87,6 +88,7 @@ interface Execution {
   toolsByName: Map<string, AgentTool>;
   emitter: EventEmitterHandle;
   outputJsonSchema: JsonSchema | undefined;
+  callbacks: StreamCallbacks;
   signal: AbortSignal;
   dispose(): void;
 }
@@ -148,7 +150,7 @@ class DefaultAgentRuntime implements AgentRuntime {
       updatedAt: now,
     };
 
-    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal);
+    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal, options);
     exec.emitter.emit("AGENT_STARTED", {
       ...(agent.version === undefined ? {} : { agentVersion: agent.version }),
       ...(options.user === undefined ? {} : { userId: options.user.userId }),
@@ -177,6 +179,9 @@ class DefaultAgentRuntime implements AgentRuntime {
       if (!pendingIds.has(decision.approvalId)) {
         throw new ValidationError(`resume: approval '${decision.approvalId}' is not pending for this run`, { runId: state.runId });
       }
+      if (decision.decision === "escalated" && (decision.escalateTo === undefined || decision.escalateTo === "")) {
+        throw new ValidationError(`resume: escalation of '${decision.approvalId}' needs escalateTo`, { runId: state.runId });
+      }
       decisions.set(decision.approvalId, decision);
     }
     if (options.timeoutMs !== undefined) {
@@ -185,7 +190,7 @@ class DefaultAgentRuntime implements AgentRuntime {
     }
 
     state.status = "RUNNING";
-    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal);
+    const exec = this.createExecution(agent as Agent<unknown>, state, provider, capabilities, options.signal, options);
     exec.emitter.emit("AGENT_RESUMED", {
       decisions: [...decisions.values()].map((d) => ({ approvalId: d.approvalId, decision: d.decision })),
     });
@@ -210,7 +215,27 @@ class DefaultAgentRuntime implements AgentRuntime {
       }
       state.pendingApprovals = remaining;
       for (const [pending, decision] of decided) {
-        await this.invokeTool(exec, pending.toolCall, pending.llmCallId, { request: pending.approval, decision, stepId: pending.stepId });
+        if (decision.decision === "escalated") {
+          pending.approval.escalatedTo = [...(pending.approval.escalatedTo ?? []), decision.escalateTo ?? ""];
+          state.pendingApprovals.push(pending);
+          exec.emitter.emit(
+            "TOOL_APPROVAL_ESCALATED",
+            {
+              toolCallId: pending.toolCall.id,
+              toolName: pending.toolCall.name,
+              approvalId: decision.approvalId,
+              escalateTo: decision.escalateTo ?? "",
+              ...(decision.decidedBy === undefined ? {} : { decidedBy: decision.decidedBy }),
+            },
+            { stepId: pending.stepId, toolCallId: pending.toolCall.id },
+          );
+          continue;
+        }
+        const call =
+          decision.decision === "modified"
+            ? { ...pending.toolCall, arguments: JSON.stringify(decision.modifiedArguments ?? {}) }
+            : pending.toolCall;
+        await this.invokeTool(exec, call, pending.llmCallId, { request: pending.approval, decision, stepId: pending.stepId });
       }
       if (this.waitIfPending(exec)) return;
       await this.loop(exec);
@@ -278,6 +303,7 @@ class DefaultAgentRuntime implements AgentRuntime {
     provider: LLMProvider,
     capabilities: ModelCapabilities,
     external: AbortSignal | undefined,
+    callbacks: StreamCallbacks = {},
   ): Execution {
     const controller = new AbortController();
     const onExternalAbort = (): void => {
@@ -303,7 +329,7 @@ class DefaultAgentRuntime implements AgentRuntime {
       emitter: createEventEmitter({
         runId: state.runId,
         agentId: state.agentId,
-        sinks: this.sinks,
+        sinks: callbacks.onEvent === undefined ? this.sinks : [...this.sinks, { emit: callbacks.onEvent }],
         clock: this.clock,
         ids: this.ids,
         startSequence: state.eventSequence,
@@ -313,6 +339,7 @@ class DefaultAgentRuntime implements AgentRuntime {
         ...(this.options.onSinkError === undefined ? {} : { onSinkError: this.options.onSinkError }),
       }),
       outputJsonSchema: agent.config.outputJsonSchema ?? deriveJsonSchema(agent.config.output),
+      callbacks,
       signal: controller.signal,
       dispose: () => {
         clearTimeout(timer);
@@ -412,7 +439,14 @@ class DefaultAgentRuntime implements AgentRuntime {
       );
       const startedAt = Date.now();
       try {
-        response = normalizeResponse(await raceAbort(provider.generate(request), exec.signal));
+        const onDelta = exec.callbacks.onTextDelta;
+        const streamed = onDelta !== undefined && provider.stream !== undefined && capabilities.streaming;
+        response = normalizeResponse(
+          await raceAbort(
+            streamed ? collectStream(provider.stream!(request), (delta) => onDelta(delta, { llmCallId })) : provider.generate(request),
+            exec.signal,
+          ),
+        );
         step.attempts = attempt;
         const cost = estimateCostUsd(response.usage, capabilities.pricing);
         const usage = state.usage;
@@ -801,6 +835,16 @@ class DefaultAgentRuntime implements AgentRuntime {
 }
 
 // ---------------------------------------------------------------- helpers
+
+/** Consume a provider stream, forwarding text deltas, and return the final response. */
+async function collectStream(stream: AsyncIterable<LLMStreamEvent>, onDelta: (delta: string) => void): Promise<LLMResponse> {
+  for await (const event of stream) {
+    if (event.type === "content_delta") onDelta(event.delta);
+    else if (event.type === "done") return event.response;
+    else if (event.type === "error") throw new LLMError(event.error.message, { retryable: event.error.retryable, metadata: { code: event.error.code } });
+  }
+  throw new LLMError("Stream ended without a final response", { retryable: true });
+}
 
 function correlationOf(step: ExecutionStep): EventCorrelation {
   return {
