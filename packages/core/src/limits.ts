@@ -11,8 +11,11 @@ export function validateLimits(limits: RunLimits | undefined, where: string): vo
       throw new ConfigurationError(`${where}: limits.${key} must be a positive integer`);
     }
   }
-  if (limits.maxLLMRetries !== undefined && (!Number.isInteger(limits.maxLLMRetries) || limits.maxLLMRetries < 0)) {
-    throw new ConfigurationError(`${where}: limits.maxLLMRetries must be a non-negative integer`);
+  for (const key of ["maxLLMRetries", "maxOutputCorrections", "maxReflectionAttempts"] as const) {
+    const value = limits[key];
+    if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      throw new ConfigurationError(`${where}: limits.${key} must be a non-negative integer`);
+    }
   }
   if (limits.maxCost !== undefined && (!Number.isFinite(limits.maxCost) || limits.maxCost <= 0)) {
     throw new ConfigurationError(`${where}: limits.maxCost must be a positive number`);
@@ -30,6 +33,8 @@ export function resolveLimits(...layers: (RunLimits | undefined)[]): ResolvedRun
     if (layer.maxCost !== undefined) resolved.maxCost = layer.maxCost;
     if (layer.timeoutMs !== undefined) resolved.timeoutMs = layer.timeoutMs;
     if (layer.maxLLMRetries !== undefined) resolved.maxLLMRetries = layer.maxLLMRetries;
+    if (layer.maxOutputCorrections !== undefined) resolved.maxOutputCorrections = layer.maxOutputCorrections;
+    if (layer.maxReflectionAttempts !== undefined) resolved.maxReflectionAttempts = layer.maxReflectionAttempts;
   }
   return resolved;
 }

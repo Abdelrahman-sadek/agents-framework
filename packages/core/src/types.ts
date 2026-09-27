@@ -2,6 +2,7 @@ import type { SerializedError } from "./errors.js";
 import type { Principal } from "./identity.js";
 import type { LLMMessage, LLMToolCall } from "./llm.js";
 import type { ApprovalRequest } from "./tool.js";
+import type { ContextItem } from "./context.js";
 
 /**
  * Hard limits for a run. Every intelligent operation is bounded; the runtime,
@@ -20,6 +21,10 @@ export interface RunLimits {
   timeoutMs?: number;
   /** Retries for retryable model errors, per model call. */
   maxLLMRetries?: number;
+  /** Times the model may be asked to fix output that fails the output schema. */
+  maxOutputCorrections?: number;
+  /** Times the model may revise an answer that fails verification. */
+  maxReflectionAttempts?: number;
 }
 
 export interface ResolvedRunLimits {
@@ -29,6 +34,8 @@ export interface ResolvedRunLimits {
   maxCost: number | undefined;
   timeoutMs: number;
   maxLLMRetries: number;
+  maxOutputCorrections: number;
+  maxReflectionAttempts: number;
 }
 
 export const DEFAULT_RUN_LIMITS: ResolvedRunLimits = Object.freeze({
@@ -38,6 +45,8 @@ export const DEFAULT_RUN_LIMITS: ResolvedRunLimits = Object.freeze({
   maxCost: undefined,
   timeoutMs: 120_000,
   maxLLMRetries: 2,
+  maxOutputCorrections: 1,
+  maxReflectionAttempts: 1,
 });
 
 export type AgentStatus =
@@ -107,6 +116,10 @@ export interface AgentState {
   steps: ExecutionStep[];
   usage: UsageTotals;
   pendingApprovals: PendingApproval[];
+  /** Items contributed by context providers at run start (with provenance). */
+  contextItems: ContextItem[];
+  /** Correction counters, persisted so resumed runs keep their budget. */
+  corrections: { output: number; reflection: number };
   limits: ResolvedRunLimits;
   metadata: Record<string, unknown>;
   output?: unknown;

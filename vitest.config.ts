@@ -1,20 +1,21 @@
+import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-const src = (pkg: string) => fileURLToPath(new URL(`./packages/${pkg}/src`, import.meta.url));
+const packagesDir = fileURLToPath(new URL("./packages", import.meta.url));
+const packages = readdirSync(packagesDir);
 
-const alias = {
-  "@agent-framework/core/testing": `${src("core")}/testing.ts`,
-  "@agent-framework/core": `${src("core")}/index.ts`,
-  "@agent-framework/llm": `${src("llm")}/index.ts`,
-  "@agent-framework/tools": `${src("tools")}/index.ts`,
+const alias: Record<string, string> = {
+  "@agent-framework/core/testing": `${packagesDir}/core/src/testing.ts`,
 };
+for (const pkg of packages) alias[`@agent-framework/${pkg}`] = `${packagesDir}/${pkg}/src/index.ts`;
 
 export default defineConfig({
   test: {
-    projects: ["core", "llm", "tools"].map((name) => ({
+    projects: packages.map((name) => ({
       resolve: { alias },
       test: { name, include: [`packages/${name}/src/**/*.test.ts`], environment: "node" },
     })),
+    passWithNoTests: true,
   },
 });

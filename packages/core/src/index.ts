@@ -12,7 +12,7 @@ export type { RuntimeOptions } from "./runtime.js";
 
 export * from "./errors.js";
 
-export { InMemoryEventSink, noopEmit } from "./events.js";
+export { InMemoryEventSink, createEventEmitter, noopEmit } from "./events.js";
 export type {
   AgentEvent,
   AgentEventOf,
@@ -20,6 +20,8 @@ export type {
   AgentEventType,
   EmitFn,
   EventCorrelation,
+  EventEmitterHandle,
+  EventEmitterOptions,
   EventSink,
 } from "./events.js";
 
@@ -73,8 +75,24 @@ export { resolveLimits, validateLimits } from "./limits.js";
 export { InMemoryRunStateStore } from "./state-store.js";
 export type { RunStateStore } from "./state-store.js";
 
-export { passthroughContext } from "./context.js";
-export type { ContextAssemblyRequest, ContextAssemblyResult, ContextManager } from "./context.js";
+export { passthroughContext, renderContextItems, withContextItems } from "./context.js";
+export type {
+  ContextAssemblyRequest,
+  ContextAssemblyResult,
+  ContextItem,
+  ContextManager,
+  ContextProvider,
+  ContextProviderRequest,
+} from "./context.js";
+
+export { applyGuardrails } from "./guardrail.js";
+export type { Guardrail, GuardrailContext, GuardrailOutcome, GuardrailResult, GuardrailStage } from "./guardrail.js";
+
+export { citationVerifier, llmCritic, ruleVerifier } from "./reflection.js";
+export type { LLMCriticOptions, ReflectionConfig, VerificationContext, VerificationResult, Verifier } from "./reflection.js";
+
+export { cosineSimilarity } from "./embeddings.js";
+export type { EmbeddingProvider } from "./embeddings.js";
 
 export { createDecisionEngine, ruleDecisionProvider } from "./decision.js";
 export type {

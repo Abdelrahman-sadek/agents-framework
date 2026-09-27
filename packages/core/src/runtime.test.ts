@@ -267,9 +267,9 @@ describe("structured output", () => {
   });
 
   test("fails on invalid JSON or schema mismatch", async () => {
-    const bad = setup([{ text: "not json" }], {}, { output: Report });
+    const bad = setup([{ text: "not json" }], {}, { output: Report, limits: { maxOutputCorrections: 0 } });
     await expect(bad.agent.run({ input: "x" })).resolves.toMatchObject({ status: "FAILED", error: { code: "OUTPUT_VALIDATION_ERROR" } });
-    const mismatch = setup([{ text: '{"summary":"s","confidence":7}' }], {}, { output: Report });
+    const mismatch = setup([{ text: '{"summary":"s","confidence":7}' }], {}, { output: Report, limits: { maxOutputCorrections: 0 } });
     const result = await mismatch.agent.run({ input: "x" });
     expect(result.error?.code).toBe("OUTPUT_VALIDATION_ERROR");
     expect(result.output).toBeUndefined();
@@ -278,6 +278,6 @@ describe("structured output", () => {
   test("requests JSON when the model supports structured output", async () => {
     const { agent, provider } = setup([{ text: '{"summary":"s","confidence":1}' }], {}, { output: Report });
     await agent.run({ input: "x" });
-    expect(provider.requests[0]?.responseFormat).toEqual({ type: "json" });
+    expect(provider.requests[0]?.responseFormat).toMatchObject({ type: "json", schema: { type: "object", required: ["summary", "confidence"] } });
   });
 });

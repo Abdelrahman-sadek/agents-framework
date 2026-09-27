@@ -3,7 +3,10 @@ import type { AgentEvent } from "./events.js";
 import type { Principal } from "./identity.js";
 import { validateLimits } from "./limits.js";
 import type { LLMModelSelector, LLMRequestSettings } from "./llm.js";
-import type { Schema } from "./schema.js";
+import type { JsonSchema, Schema } from "./schema.js";
+import type { ContextProvider } from "./context.js";
+import type { Guardrail } from "./guardrail.js";
+import type { ReflectionConfig } from "./reflection.js";
 import type { AgentTool, ApprovalDecision, ApprovalRequest } from "./tool.js";
 import type { AgentState, AgentStatus, ExecutionStep, RunLimits, UsageTotals } from "./types.js";
 
@@ -17,6 +20,14 @@ export interface AgentConfig<TOutput = string> {
   tools?: readonly AgentTool[];
   /** Schema for the final output. Without it, the output is the model's text. */
   output?: Schema<TOutput>;
+  /** JSON Schema sent to models that support structured output. Derived from `output.toJSONSchema()` when available. */
+  outputJsonSchema?: JsonSchema;
+  /** Knowledge, memory or application context contributed once per run. */
+  context?: readonly ContextProvider[];
+  /** Input, tool-result and output guardrails. */
+  guardrails?: readonly Guardrail[];
+  /** Generate → verify → correct. Opt-in; bounded by `limits.maxReflectionAttempts`. */
+  reflection?: ReflectionConfig;
   /** Permissions granted to the agent identity. Tools need them on both agent and user. */
   permissions?: readonly string[];
   limits?: RunLimits;
