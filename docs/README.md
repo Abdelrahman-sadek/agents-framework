@@ -19,6 +19,9 @@
 | [Reflection and verification](./reflection.md) | `@agent-framework/core` |
 | [Orchestration](./orchestration.md) | `@agent-framework/orchestration` |
 | [Multi-agent systems](./multi-agent.md) | `@agent-framework/orchestration` |
+| [Skills](./skills.md) | `@agent-framework/core` |
+| [MCP](./mcp.md) | `@agent-framework/mcp` |
+| [Sandbox tools](./sandbox.md) | `@agent-framework/sandbox` |
 | [Security](./security.md) | `@agent-framework/security`, `@agent-framework/tools` |
 | [Guardrails](./guardrails.md) | `@agent-framework/security` |
 | [Observability](./observability.md) | `@agent-framework/observability` |

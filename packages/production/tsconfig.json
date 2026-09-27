@@ -17,6 +17,12 @@
     },
     {
       "path": "../tools"
+    },
+    {
+      "path": "../knowledge"
+    },
+    {
+      "path": "../memory"
     }
   ]
 }

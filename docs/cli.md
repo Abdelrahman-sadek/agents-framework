@@ -10,6 +10,7 @@
 | `agent evaluate <module> [--baseline f] [--out f]` | Runs the exported `evaluation`; non-zero exit on failed thresholds or regressions |
 | `agent inspect <run-id> --db runs.db` | Shows persisted run state (SQLite) |
 | `agent trace <run-id> --events events.jsonl` | Timeline, tokens, cost, tools, approvals, guardrails from recorded events |
+| `agent dashboard --events events.jsonl [--port 4319]` | Local web UI with run list, details and timelines |
 | `agent validate <manifest.json> [--registry module]` | Validates a manifest and checks references and least privilege |
 
 ## Agent manifest

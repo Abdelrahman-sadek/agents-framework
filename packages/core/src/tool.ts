@@ -26,13 +26,23 @@ export interface ApprovalRequest {
   requestedAt: string;
   expiresAt?: string;
   reason?: string;
+  /** Reviewers this approval was escalated to, in order. */
+  escalatedTo?: string[];
 }
 
 export interface ApprovalDecision {
   approvalId: string;
-  decision: "approved" | "rejected";
+  /**
+   * - `approved`: execute with the original arguments
+   * - `modified`: execute with `modifiedArguments` (re-validated and re-authorized)
+   * - `rejected`: do not execute; the model is told
+   * - `escalated`: stays pending, handed to `escalateTo`
+   */
+  decision: "approved" | "rejected" | "modified" | "escalated";
   decidedBy?: string;
   reason?: string;
+  modifiedArguments?: unknown;
+  escalateTo?: string;
 }
 
 export interface ToolInvocation {

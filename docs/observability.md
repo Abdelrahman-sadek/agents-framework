@@ -45,6 +45,14 @@ costs.report(); // total + byAgent / byModel / byTenant / byUser / byRun: calls,
 
 Costs come from `ModelCapabilities.pricing` (or provider-reported cost). Enforce budgets per run with `limits.maxCost` / `maxTokens`.
 
+## Dashboard
+
+```ts
+const dashboard = await createDashboardServer({ events: () => sink.events, port: 4319 });   // http://127.0.0.1:4319
+```
+
+`agent dashboard --events events.jsonl` serves the same UI from a recorded file. It is read-only and binds to localhost by default. Run data is rendered as text, never as HTML. Put it behind your own authentication before exposing it.
+
 ## Run inspection
 
 ```ts

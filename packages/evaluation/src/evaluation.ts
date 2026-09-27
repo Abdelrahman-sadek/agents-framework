@@ -8,6 +8,7 @@ import {
   type Principal,
   type Schema,
   type SerializedError,
+  type Skill,
 } from "@agent-framework/core";
 
 export interface EvalCase {
@@ -27,6 +28,13 @@ export interface EvalCase {
 export interface Dataset {
   name: string;
   cases: readonly EvalCase[];
+}
+
+/** Turn a skill's declared evaluation cases into a dataset. */
+export function skillDataset(skill: Skill): Dataset {
+  const cases = skill.evaluation?.cases ?? [];
+  if (cases.length === 0) throw new ConfigurationError(`Skill '${skill.name}' declares no evaluation cases`);
+  return defineDataset(`skill:${skill.name}`, cases.map((c) => ({ ...c, tags: [`skill:${skill.name}`] })));
 }
 
 export function defineDataset(name: string, cases: readonly EvalCase[]): Dataset {

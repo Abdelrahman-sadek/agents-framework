@@ -48,8 +48,9 @@ export interface AgentEventPayloads {
   TOOL_EXECUTION_FAILED: { toolCallId: string; toolName: string; attempt: number; willRetry: boolean; error: SerializedError };
   TOOL_EXECUTION_TIMED_OUT: { toolCallId: string; toolName: string; attempt: number; willRetry: boolean; timeoutMs: number };
   TOOL_APPROVAL_REQUIRED: { toolCallId: string; toolName: string; approvalId: string; expiresAt?: string };
-  TOOL_APPROVAL_GRANTED: { toolCallId: string; toolName: string; approvalId: string; decidedBy?: string };
+  TOOL_APPROVAL_GRANTED: { toolCallId: string; toolName: string; approvalId: string; decidedBy?: string; modified?: boolean };
   TOOL_APPROVAL_REJECTED: { toolCallId: string; toolName: string; approvalId: string; decidedBy?: string; reason?: string };
+  TOOL_APPROVAL_ESCALATED: { toolCallId: string; toolName: string; approvalId: string; escalateTo: string; decidedBy?: string };
 
   LIMIT_EXCEEDED: { limitType: LimitType; limit: number; current: number };
 

@@ -25,6 +25,7 @@ ADRs are stored in `docs/decisions/`. They record why the framework is built the
 - [019-production-runtime.md](./019-production-runtime.md)
 - [020-provider-adapters.md](./020-provider-adapters.md)
 - [021-manifest-and-cli.md](./021-manifest-and-cli.md)
+- [022-skills-mcp-sandbox.md](./022-skills-mcp-sandbox.md)
 
 ## Open decisions and risks
 

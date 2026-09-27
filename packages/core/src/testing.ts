@@ -4,7 +4,7 @@
  * Import from `@agent-framework/core/testing`. Not intended for production.
  */
 import { LLMError } from "./errors.js";
-import type { LLMProvider, LLMRequest, LLMResponse, LLMToolCall, LLMTokenUsage, ModelCapabilities } from "./llm.js";
+import type { LLMProvider, LLMRequest, LLMResponse, LLMStreamEvent, LLMToolCall, LLMTokenUsage, ModelCapabilities } from "./llm.js";
 
 export type ScriptedStep =
   | { text: string; usage?: Partial<LLMTokenUsage> }
@@ -24,6 +24,8 @@ export interface ScriptedProviderOptions {
   capabilities?: Partial<ModelCapabilities>;
   /** Delay before each response, honouring the request's abort signal. */
   latencyMs?: number;
+  /** Also implement `stream()`, emitting the text word by word. */
+  streaming?: boolean;
 }
 
 /**
@@ -36,7 +38,7 @@ export function createScriptedProvider(steps: readonly ScriptedStep[], options: 
   const id = options.id ?? "scripted";
   let counter = 0;
 
-  return {
+  const provider: ScriptedProvider = {
     id,
     requests,
     get remaining() {
@@ -81,6 +83,18 @@ export function createScriptedProvider(steps: readonly ScriptedStep[], options: 
       return { id: `${id}-${counter}`, modelId: request.modelId, content: step.text, toolCalls: [], finishReason: "stop", usage };
     },
   };
+  if (options.streaming === true) {
+    const baseCapabilities = provider.capabilities.bind(provider);
+    return Object.assign(provider, {
+      capabilities: (modelId: string) => ({ ...(baseCapabilities(modelId) as ModelCapabilities), streaming: true }),
+      async *stream(request: LLMRequest): AsyncIterable<LLMStreamEvent> {
+        const response = await provider.generate(request);
+        for (const piece of response.content.match(/\S+\s*/g) ?? []) yield { type: "content_delta", delta: piece };
+        yield { type: "done", response };
+      },
+    });
+  }
+  return provider;
 }
 
 function delay(ms: number, signal: AbortSignal | undefined): Promise<void> {

@@ -7,6 +7,7 @@ import type { JsonSchema, Schema } from "./schema.js";
 import type { ContextProvider } from "./context.js";
 import type { Guardrail } from "./guardrail.js";
 import type { ReflectionConfig } from "./reflection.js";
+import { renderSkillInstructions, resolveSkills, type Skill } from "./skill.js";
 import type { AgentTool, ApprovalDecision, ApprovalRequest } from "./tool.js";
 import type { AgentState, AgentStatus, ExecutionStep, RunLimits, UsageTotals } from "./types.js";
 
@@ -28,6 +29,8 @@ export interface AgentConfig<TOutput = string> {
   guardrails?: readonly Guardrail[];
   /** Generate → verify → correct. Opt-in; bounded by `limits.maxReflectionAttempts`. */
   reflection?: ReflectionConfig;
+  /** Composable skills. Their instructions, tools, permissions, context, guardrails and verifiers are merged in. */
+  skills?: readonly Skill[];
   /** Permissions granted to the agent identity. Tools need them on both agent and user. */
   permissions?: readonly string[];
   limits?: RunLimits;
@@ -37,7 +40,20 @@ export interface AgentConfig<TOutput = string> {
   runtime?: AgentRuntime;
 }
 
-export interface RunOptions {
+/** Live callbacks for one invocation (UI streaming). */
+export interface StreamCallbacks {
+  /** Text tokens as the model produces them (requires a provider with `stream`). */
+  onTextDelta?: (delta: string, info: { llmCallId: string }) => void;
+  /** Every event of this invocation, as it happens. */
+  onEvent?: (event: AgentEvent) => void;
+}
+
+export type AgentStreamChunk =
+  | { type: "text"; delta: string; llmCallId: string }
+  | { type: "event"; event: AgentEvent }
+  | { type: "result"; result: AgentRunResult<unknown> };
+
+export interface RunOptions extends StreamCallbacks {
   input: unknown;
   /** The end user on whose behalf the agent acts. Used for authorization and tenancy. */
   user?: Principal;
@@ -48,7 +64,7 @@ export interface RunOptions {
   signal?: AbortSignal;
 }
 
-export interface ResumeOptions {
+export interface ResumeOptions extends StreamCallbacks {
   runId: string;
   approvals: readonly ApprovalDecision[];
   signal?: AbortSignal;
@@ -92,6 +108,8 @@ export interface Agent<TOutput = string> {
   run(options: RunOptions): Promise<AgentRunResult<TOutput>>;
   resume(options: ResumeOptions): Promise<AgentRunResult<TOutput>>;
   recover(options: RecoverOptions): Promise<AgentRunResult<TOutput>>;
+  /** Run and yield text deltas and events as they happen, then the final result. */
+  stream(options: Omit<RunOptions, keyof StreamCallbacks>): AsyncIterable<AgentStreamChunk>;
   /** Returns a copy of this agent bound to another runtime. */
   withRuntime(runtime: AgentRuntime): Agent<TOutput>;
 }
@@ -99,7 +117,8 @@ export interface Agent<TOutput = string> {
 const AGENT_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 export const TOOL_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 
-export function defineAgent<TOutput = string>(config: AgentConfig<TOutput>): Agent<TOutput> {
+export function defineAgent<TOutput = string>(input: AgentConfig<TOutput>): Agent<TOutput> {
+  const config = applySkills(input);
   const where = `Agent '${String(config.name)}'`;
   if (typeof config.name !== "string" || !AGENT_NAME.test(config.name)) {
     throw new ConfigurationError(`${where}: name must match ${AGENT_NAME.source}`);
@@ -139,7 +158,81 @@ export function defineAgent<TOutput = string>(config: AgentConfig<TOutput>): Age
     run: (options: RunOptions) => requireRuntime().run(agent, options),
     resume: (options: ResumeOptions) => requireRuntime().resume(agent, options),
     recover: (options: RecoverOptions) => requireRuntime().recover(agent, options),
+    stream: (options: Omit<RunOptions, keyof StreamCallbacks>) => streamRun((callbacks) => requireRuntime().run(agent, { ...options, ...callbacks })),
     withRuntime: (runtime: AgentRuntime) => defineAgent<TOutput>({ ...config, runtime }),
   });
   return agent;
+}
+
+/** Bridge callback-style streaming to an async iterable. */
+export async function* streamRun(start: (callbacks: StreamCallbacks) => Promise<AgentRunResult<unknown>>): AsyncIterable<AgentStreamChunk> {
+  const queue: AgentStreamChunk[] = [];
+  let wake: (() => void) | undefined;
+  let done = false;
+  let failure: unknown;
+  const push = (chunk: AgentStreamChunk): void => {
+    queue.push(chunk);
+    wake?.();
+  };
+  start({
+    onTextDelta: (delta, info) => push({ type: "text", delta, llmCallId: info.llmCallId }),
+    onEvent: (event) => push({ type: "event", event }),
+  }).then(
+    (result) => {
+      push({ type: "result", result });
+      done = true;
+      wake?.();
+    },
+    (error: unknown) => {
+      failure = error;
+      done = true;
+      wake?.();
+    },
+  );
+  for (;;) {
+    const next = queue.shift();
+    if (next !== undefined) {
+      yield next;
+      continue;
+    }
+    if (done) {
+      if (failure !== undefined) throw failure;
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      wake = resolve;
+    });
+    wake = undefined;
+  }
+}
+
+/** Merge skills into an agent config. Idempotent, so `defineAgent({ ...agent.config })` is safe. */
+function applySkills<TOutput>(config: AgentConfig<TOutput>): AgentConfig<TOutput> {
+  if (config.skills === undefined || config.skills.length === 0) return config;
+  const skills = resolveSkills(config.skills);
+  const unique = <T>(items: readonly T[]): T[] => [...new Set(items)];
+  const tools = [...(config.tools ?? [])];
+  for (const skill of skills) {
+    for (const tool of skill.tools ?? []) {
+      const existing = tools.find((t) => t.name === tool.name);
+      if (existing === undefined) tools.push(tool);
+      else if (existing !== tool) throw new ConfigurationError(`Skill '${skill.name}' brings a different tool named '${tool.name}'`);
+    }
+  }
+  let instructions = config.instructions ?? "";
+  for (const skill of skills) {
+    const block = renderSkillInstructions(skill);
+    if (!instructions.includes(block)) instructions = instructions === "" ? block : `${instructions}\n\n${block}`;
+  }
+  const verifiers = unique([...(config.reflection?.verifiers ?? []), ...skills.flatMap((s) => s.verifiers ?? [])]);
+  return {
+    ...config,
+    instructions,
+    tools,
+    permissions: unique([...(config.permissions ?? []), ...skills.flatMap((s) => s.permissions ?? [])]),
+    context: unique([...(config.context ?? []), ...skills.flatMap((s) => s.context ?? [])]),
+    guardrails: unique([...(config.guardrails ?? []), ...skills.flatMap((s) => s.guardrails ?? [])]),
+    ...(verifiers.length === 0 ? {} : { reflection: { verifiers } }),
+    skills,
+  };
 }

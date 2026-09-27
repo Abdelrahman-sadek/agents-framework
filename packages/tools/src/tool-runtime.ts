@@ -224,7 +224,9 @@ export class ToolRuntime implements ToolInvoker {
       const bound =
         request.toolCallId === inv.toolCallId &&
         request.toolName === toolName &&
-        request.argumentsHash === argumentsHash &&
+        // A reviewer-modified call carries new arguments by design; they were validated and authorized above.
+        (human.decision === "modified" || request.argumentsHash === argumentsHash) &&
+        human.decision !== "escalated" &&
         human.approvalId === request.approvalId;
       if (!bound) {
         return {
@@ -244,8 +246,9 @@ export class ToolRuntime implements ToolInvoker {
           error: new ApprovalRejectedError(`The reviewer rejected this action${human.reason === undefined ? "" : `: ${human.reason}`}`),
         };
       }
-      audit.approval = { approvalId: request.approvalId, decision: "approved", ...decidedBy };
-      inv.emit("TOOL_APPROVAL_GRANTED", { ...ids, approvalId: request.approvalId, ...decidedBy }, correlation);
+      const modified = human.decision === "modified";
+      audit.approval = { approvalId: request.approvalId, decision: modified ? "modified" : "approved", ...decidedBy };
+      inv.emit("TOOL_APPROVAL_GRANTED", { ...ids, approvalId: request.approvalId, ...decidedBy, ...(modified ? { modified } : {}) }, correlation);
     } else if (this.approvalRequired(def, input, user)) {
       const now = this.clock.now();
       const approval: ApprovalRequest = {

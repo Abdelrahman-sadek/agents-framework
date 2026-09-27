@@ -47,6 +47,12 @@
       ],
       "@agent-framework/provider-anthropic": [
         "./packages/provider-anthropic/src/index.ts"
+      ],
+      "@agent-framework/mcp": [
+        "./packages/mcp/src/index.ts"
+      ],
+      "@agent-framework/sandbox": [
+        "./packages/sandbox/src/index.ts"
       ]
     }
   },

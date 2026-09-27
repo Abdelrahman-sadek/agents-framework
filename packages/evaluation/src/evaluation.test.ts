@@ -114,3 +114,14 @@ describe("agent evaluation", () => {
     expect(() => defineEvaluation({ name: "e", dataset, target: async () => ({ output: 1 }), evaluators: [] })).toThrow();
   });
 });
+
+describe("skill evaluation", () => {
+  test("a skill's declared cases become a dataset", async () => {
+    const { defineSkill } = await import("@agent-framework/core");
+    const { skillDataset } = await import("./evaluation.js");
+    const skill = defineSkill({ name: "math", description: "Arithmetic", instructions: "Compute.", evaluation: { cases: [{ id: "add", input: "1+1", expected: "2" }] } });
+    const report = await defineEvaluation({ name: "skill", dataset: skillDataset(skill), target: async () => ({ output: "2" }), evaluators: [evaluators.contains()] }).run();
+    expect(report.passed).toBe(true);
+    expect(() => skillDataset(defineSkill({ name: "empty", description: "d", instructions: "i" }))).toThrow(/no evaluation cases/);
+  });
+});

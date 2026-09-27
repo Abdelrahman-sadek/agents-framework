@@ -239,3 +239,45 @@ describe("human approval flow", () => {
     expect(again.pendingApprovals).toHaveLength(1);
   });
 });
+
+describe("approval: modify and escalate", () => {
+  const pay = vi.fn(async ({ amount }: { amount: number }) => ({ paid: amount }));
+  const payTool = defineTool({ name: "pay", description: "Pay", input: z.object({ amount: z.number().max(1000) }), approval: { required: true }, execute: pay });
+
+  test("a reviewer can approve with modified (re-validated) arguments", async () => {
+    pay.mockClear();
+    const { agent, audit, sink } = setup([{ toolCalls: [{ id: "c1", name: "pay", arguments: { amount: 900 } }] }, { text: "Paid." }], [payTool]);
+    const paused = await agent.run({ input: "pay 900" });
+    const approvalId = paused.pendingApprovals[0]!.approvalId;
+    const done = await agent.resume({ runId: paused.runId, approvals: [{ approvalId, decision: "modified", modifiedArguments: { amount: 500 }, decidedBy: "cfo" }] });
+    expect(done.status).toBe("COMPLETED");
+    expect(pay).toHaveBeenCalledWith({ amount: 500 }, expect.anything());
+    expect(sink.ofType("TOOL_APPROVAL_GRANTED")[0]?.payload).toMatchObject({ modified: true, decidedBy: "cfo" });
+    expect(audit.entries.at(-1)?.approval).toMatchObject({ decision: "modified" });
+  });
+
+  test("modified arguments that fail validation never execute", async () => {
+    pay.mockClear();
+    const { agent } = setup([{ toolCalls: [{ id: "c1", name: "pay", arguments: { amount: 900 } }] }, { text: "Could not pay." }], [payTool]);
+    const paused = await agent.run({ input: "pay" });
+    const done = await agent.resume({ runId: paused.runId, approvals: [{ approvalId: paused.pendingApprovals[0]!.approvalId, decision: "modified", modifiedArguments: { amount: 99_999 } }] });
+    expect(pay).not.toHaveBeenCalled();
+    expect(done.steps.find((s) => s.kind === "tool_call")?.error?.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("escalation keeps the approval pending and records the new reviewer", async () => {
+    pay.mockClear();
+    const { agent, sink } = setup([{ toolCalls: [{ id: "c1", name: "pay", arguments: { amount: 900 } }] }, { text: "Paid." }], [payTool]);
+    const paused = await agent.run({ input: "pay" });
+    const approvalId = paused.pendingApprovals[0]!.approvalId;
+    const escalated = await agent.resume({ runId: paused.runId, approvals: [{ approvalId, decision: "escalated", escalateTo: "finance-director", decidedBy: "team-lead" }] });
+    expect(escalated.status).toBe("WAITING_FOR_APPROVAL");
+    expect(escalated.pendingApprovals[0]?.escalatedTo).toEqual(["finance-director"]);
+    expect(sink.ofType("TOOL_APPROVAL_ESCALATED")[0]?.payload).toMatchObject({ escalateTo: "finance-director" });
+    expect(pay).not.toHaveBeenCalled();
+    await expect(agent.resume({ runId: paused.runId, approvals: [{ approvalId, decision: "escalated" }] })).rejects.toThrow(/escalateTo/);
+    const done = await agent.resume({ runId: paused.runId, approvals: [{ approvalId, decision: "approved", decidedBy: "finance-director" }] });
+    expect(done.status).toBe("COMPLETED");
+    expect(pay).toHaveBeenCalledOnce();
+  });
+});

@@ -107,6 +107,9 @@ describe.skipIf(!hasSqlite)("agent inspect / trace", () => {
     expect(await runCli(["trace", "run-1", "--events", "events.jsonl"], t.io)).toBe(0);
     expect(t.out.join("")).toContain("Tools: lookup(completed)");
     expect(await runCli(["trace", "nope", "--events", "events.jsonl"], t.io)).toBe(1);
+    t.out.length = 0;
+    expect(await runCli(["dashboard", "--events", "events.jsonl", "--port", "0"], { ...t.io, waitForExit: async () => {} })).toBe(0);
+    expect(t.out.join("")).toMatch(/Dashboard: http:\/\/127\.0\.0\.1:\d+/);
     expect(await runCli(["inspect", "nope", "--db", "runs.db"], t.io)).toBe(1);
   });
 });

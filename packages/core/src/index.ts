@@ -4,8 +4,11 @@
  * Everything exported here follows semantic versioning. Symbols marked
  * `@experimental` in their doc comment may change in minor releases.
  */
-export { defineAgent } from "./agent.js";
-export type { Agent, AgentConfig, AgentRunResult, AgentRuntime, RecoverOptions, ResumeOptions, RunOptions } from "./agent.js";
+export { defineAgent, streamRun } from "./agent.js";
+export type { Agent, AgentConfig, AgentRunResult, AgentRuntime, AgentStreamChunk, RecoverOptions, ResumeOptions, RunOptions, StreamCallbacks } from "./agent.js";
+
+export { defineSkill, renderSkillInstructions, resolveSkills } from "./skill.js";
+export type { Skill } from "./skill.js";
 
 export { createRuntime, raceAbort, sleep } from "./runtime.js";
 export type { RuntimeOptions } from "./runtime.js";

@@ -18,6 +18,9 @@ The core stays small by defining interfaces for everything that varies. This pag
 | `Verifier` | `ruleVerifier`, `citationVerifier`, `llmCritic`, `agentVerifier` |
 | `DecisionEngine` / `DecisionProvider` | `createDecisionEngine`, `ruleDecisionProvider` |
 | `SecretProvider` | `envSecrets` |
+| `SandboxRunner` | `localProcessRunner` (container/VM runners are adapters) |
+| `Skill` | `defineSkill` |
+| MCP | `mcpTools`, `connectStdioServer`, `connectHttpServer` |
 | `Schema` | any `safeParse` validator (Zod) |
 | `Clock`, `IdGenerator` | system, random, sequential |
 
@@ -51,27 +54,11 @@ Every model request goes through `ContextManager.assemble({ messages, maxTokens 
 
 ## Skills
 
-A **Skill** will be a composable, testable capability, not a prompt string:
-
-```ts
-// Future shape (not implemented)
-defineSkill({
-  name, description,
-  input: Schema, output: Schema,
-  instructions,                 // scoped, not appended to a giant system prompt
-  tools: [..],                  // required tools
-  permissions: [..],            // union checked like tool permissions
-  dependsOn: [otherSkill],
-  examples: [..],
-  evaluation: { dataset, evaluators },
-});
-```
-
-The current design already accommodates it: agents take `tools: AgentTool[]` and `permissions`, tools carry their own schemas and permissions, and instructions are plain data. A skill can compile down to a set of tools, permissions and an instruction fragment without changing the runtime.
+Implemented: see [Skills](../skills.md) and [ADR 022](../decisions/022-skills-mcp-sandbox.md).
 
 ## Sandbox tools
 
-Filesystem, shell, git, network and workspace access will be **sandbox-backed tools** (`kind: "sandbox"`). The sandbox adapter owns isolation and resource limits (CPU, memory, wall time, egress allow-list), and each capability is a separate, narrowly scoped tool with its own permissions and approval rules. A model never receives raw OS authority; it gets tools like `read_file(path)` inside a workspace root, subject to the same validation, policy, approval and audit as every other tool.
+Implemented: see [Sandbox tools](../sandbox.md). Isolation beyond the local process is a `SandboxRunner` adapter.
 
 ## Tool adapters and MCP
 
@@ -83,4 +70,4 @@ The framework owns its abstractions. External projects (local inference, agent r
 
 1. maturity, 2. maintenance activity, 3. license, 4. security posture, 5. architecture fit, 6. performance, 7. community, 8. lock-in risk, 9. API stability, 10. whether it solves a real framework problem.
 
-Nothing is added because it is trending. Runtime dependencies today: **zod** (tools and packages that define schemas), **@opentelemetry/api** (observability, API only), **@anthropic-ai/sdk** (only in `provider-anthropic`). The core has none.
+Nothing is added because it is trending. Runtime dependencies today: **zod** (packages that define schemas), **@opentelemetry/api** (observability, API only), **@anthropic-ai/sdk** (only `provider-anthropic`) and **@modelcontextprotocol/sdk** (only `mcp`). The core has none.

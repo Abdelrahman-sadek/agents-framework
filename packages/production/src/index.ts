@@ -14,3 +14,5 @@ export { createHealthCheck, installGracefulShutdown } from "./health.js";
 export type { HealthCheckDefinition, HealthReport, HealthState } from "./health.js";
 export { createFramework } from "./framework.js";
 export type { Environment, Framework, FrameworkConfig } from "./framework.js";
+export { PgVectorStore, PostgresMemoryStore, RedisIdempotencyStore, RedisRateLimiter } from "./adapters.js";
+export type { RedisLike } from "./adapters.js";

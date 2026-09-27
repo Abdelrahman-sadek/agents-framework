@@ -127,6 +127,8 @@ const done = await agent.resume({
 - The approval only covers the original tool call and arguments (see [Tools › Approval](./tools.md#human-approval)).
 - `rejected` tells the model the action was declined and the run continues. An expired approval ends the run with `APPROVAL_EXPIRED`.
 - Approvals you don't decide yet stay pending, and `resume()` returns `WAITING_FOR_APPROVAL` again.
+- `decision: "modified"` with `modifiedArguments` runs the call with the reviewer's arguments. They are validated and authorized again, and the audit records `modified`.
+- `decision: "escalated"` with `escalateTo` keeps the call pending, appends the reviewer to `approval.escalatedTo` and emits `TOOL_APPROVAL_ESCALATED`.
 
 ## State
 
@@ -137,6 +139,23 @@ const state = await runtime.getState(runId);
 ```
 
 The default store is in-memory. Production deployments provide a durable `RunStateStore` (see [Core runtime › Durability](./architecture/core-runtime.md#durability-boundary)).
+
+## Streaming
+
+```ts
+for await (const chunk of agent.stream({ input: "Explain the refund policy" })) {
+  if (chunk.type === "text") process.stdout.write(chunk.delta);      // tokens as they arrive
+  else if (chunk.type === "event") ui.push(chunk.event);             // live lifecycle events
+  else console.log("\n", chunk.result.status);                       // final AgentRunResult
+}
+// or callbacks: agent.run({ input, onTextDelta: (d) => …, onEvent: (e) => … })
+```
+
+Streaming is used when the provider implements `stream` and reports `streaming: true`; otherwise the run falls back to `generate`. Limits, tools, guardrails and verification behave the same either way.
+
+## Skills
+
+`defineAgent({ skills: [orderSupport] })` merges reusable capabilities: instructions, tools, permissions, context, guardrails and verifiers. See [Skills](./skills.md).
 
 ## Context, guardrails and reflection
 

@@ -85,3 +85,28 @@ describe("anthropicProvider", () => {
     expect(normalizeAnthropicError(new Anthropic.APIConnectionError({ message: "reset" }))).toBeInstanceOf(LLMError);
   });
 });
+
+describe("anthropicProvider streaming", () => {
+  test("yields text deltas then the final response", async () => {
+    const events = [
+      { type: "message_start" },
+      { type: "content_block_delta", delta: { type: "text_delta", text: "Hel" } },
+      { type: "content_block_delta", delta: { type: "text_delta", text: "lo" } },
+      { type: "message_stop" },
+    ];
+    const stream = vi.fn(() => ({
+      async *[Symbol.asyncIterator]() {
+        yield* events;
+      },
+      finalMessage: async () => ({ id: "m", model: "claude-opus-5", stop_reason: "end_turn", usage: { input_tokens: 3, output_tokens: 2 }, content: [{ type: "text", text: "Hello" }] }),
+    }));
+    const provider = anthropicProvider({ client: { messages: { stream } } as unknown as Anthropic });
+    const out: unknown[] = [];
+    for await (const e of provider.stream!({ modelId: "claude-opus-5", messages: [{ role: "user", content: "hi" }] })) out.push(e);
+    expect(out).toEqual([
+      { type: "content_delta", delta: "Hel" },
+      { type: "content_delta", delta: "lo" },
+      { type: "done", response: expect.objectContaining({ content: "Hello", finishReason: "stop" }) },
+    ]);
+  });
+});

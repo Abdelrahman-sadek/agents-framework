@@ -20,7 +20,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --root ../.. --project cli"
+    "test": "vitest run --root ../.. --project cli",
+    "prepublishOnly": "tsc -b"
   },
   "bin": {
     "agent": "./bin/agent.js"
@@ -32,5 +33,14 @@
     "@agent-framework/production": "workspace:*",
     "@agent-framework/tools": "workspace:*",
     "zod": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdelrahman-sadek/agents-framework.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
+  "publishConfig": {
+    "access": "public"
   }
 }
