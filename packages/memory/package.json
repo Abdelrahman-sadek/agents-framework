@@ -38,5 +38,15 @@
   "homepage": "https://github.com/Abdelrahman-sadek/agents-framework#readme",
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "ai-agents",
+    "llm",
+    "typescript",
+    "agent-framework",
+    "memory",
+    "agent-memory"
+  ]
 }

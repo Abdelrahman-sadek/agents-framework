@@ -2,214 +2,341 @@
 
 # Agent Framework
 
-**A deterministic runtime for enterprise AI agents in TypeScript.**
-
-The model decides *what* to do. The framework decides *whether it may*, *how it runs*, and *what gets recorded*.
+**Build production AI agents in TypeScript: safe tool calling, RAG, memory, multi-agent orchestration, guardrails, human approval, observability and evaluation. Provider-independent.**
 
 [![CI](https://github.com/Abdelrahman-sadek/agents-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdelrahman-sadek/agents-framework/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](./tsconfig.base.json)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.3-339933.svg)](./package.json)
+[![Tests](https://img.shields.io/badge/tests-281%20passing-brightgreen.svg)](#development)
 [![Status](https://img.shields.io/badge/status-0.x%20pre--release-orange.svg)](./docs/roadmap.md)
 
-[Getting started](./docs/getting-started.md) ·
-[Docs](./docs/README.md) ·
-[Examples](./docs/examples/README.md) ·
-[Architecture](./docs/architecture/README.md) ·
-[Security](./docs/security.md) ·
-[Roadmap](./docs/roadmap.md)
+[**Quickstart**](#quickstart) ·
+[**Find what you need**](#find-what-you-need) ·
+[**Examples**](#examples) ·
+[**Docs**](./docs/README.md) ·
+[**FAQ**](#faq)
 
 </div>
 
 ---
 
-## Why
+## In 30 seconds
 
-Most agent libraries make it easy to hand a model a list of functions. Enterprise agents need more than that:
-
-- every tool call authorized against a real user and tenant;
-- hard limits on steps and spend;
-- approvals that survive a restart;
-- retrieval that respects tenancy;
-- memory that doesn't hoard secrets;
-- telemetry that doesn't leak prompts;
-- an evaluation suite that catches regressions.
-
-Teams end up rebuilding that infrastructure for every agent.
-
-Agent Framework is that infrastructure: a set of small, provider-independent TypeScript packages.
-
-- **The LLM is a component, not the authority.** Authorization, limits, retries, state, persistence and audit are enforced by deterministic code. A model can *request* a tool; it can never grant itself permission to run one.
-- **No vendor lock-in.** Models, vector stores, embedders, databases, queues, telemetry and policies sit behind interfaces. The core has zero runtime dependencies; vendor SDKs live only in adapter packages.
-- **Explicit state.** A run is a serializable record of messages, steps, usage, context provenance and pending approvals. Runs pause for humans, survive crashes and resume on another worker.
-- **Simple on the surface.** `defineTool`, `defineAgent`, `agent.run`. Everything else is opt-in.
-
-## Quick look
+- **What it is:** a TypeScript/Node.js framework and runtime for building AI agents that are safe to run in production: agents that call tools, retrieve documents, remember users, plan, verify their answers, and wait for human approval.
+- **What makes it different:** the model *requests* actions; **deterministic code decides** whether they are allowed, runs them under limits, and records what happened. Permissions, budgets, retries, approvals and audit never depend on what the model says.
+- **Who it's for:** teams building agents for real users and real data, in multi-tenant, regulated or cost-sensitive settings, who want one foundation instead of re-building the same infrastructure for every agent.
+- **Works with:** Anthropic Claude, OpenAI, OpenRouter, Gemini (OpenAI-compatible endpoint), vLLM, Ollama, LM Studio, and any MCP server. PostgreSQL, pgvector, SQLite, Redis and OpenTelemetry through adapters.
 
 ```ts
-import { citationVerifier, createRuntime, defineAgent } from "@agent-framework/core";
-import { createKnowledgeBase, hashingEmbedder } from "@agent-framework/knowledge";
-import { models } from "@agent-framework/llm";
-import { anthropicProvider } from "@agent-framework/provider-anthropic";
-import { piiGuardrail, promptInjectionGuardrail } from "@agent-framework/security";
-import { ToolRuntime, defineTool } from "@agent-framework/tools";
-import { z } from "zod";
-
-const refund = defineTool({
-  name: "issue_refund",
-  description: "Refund an order",
-  input: z.object({ orderId: z.string(), amount: z.number().positive() }),
-  permissions: ["payments.refund"],                         // checked against agent AND user
-  approval: { required: ({ amount }) => amount > 100 },     // human in the loop above 100
-  idempotency: { key: ({ orderId }) => orderId },           // never pay twice
-  retry: { maxAttempts: 3, backoff: "exponential" },
-  execute: async ({ orderId, amount }) => payments.refund(orderId, amount),
-});
-
-const policies = createKnowledgeBase({ name: "policies", embedder: hashingEmbedder() });
-await policies.ingest(policyDocuments);
-
 const agent = defineAgent({
-  name: "support-agent",
+  name: "support",
   model: models.anthropic("claude-opus-5"),
-  instructions: "Resolve customer requests. Cite policy as [n].",
-  tools: [refund],
-  permissions: ["payments.*"],
-  context: [policies.asContextProvider({ k: 3 })],                     // RAG with provenance
-  guardrails: [piiGuardrail(), promptInjectionGuardrail()],            // input, tool results, output
-  reflection: { verifiers: [citationVerifier()] },                     // generate → verify → correct
-  limits: { maxSteps: 8, maxToolCalls: 5, maxCost: 0.25, timeoutMs: 60_000 },
-  runtime: createRuntime({ providers: [anthropicProvider()], tools: new ToolRuntime() }),
+  instructions: "Resolve customer requests.",
+  tools: [lookupOrder, issueRefund],          // validated, permission-checked, audited
+  limits: { maxSteps: 8, maxCost: 0.25 },     // hard limits, enforced by the runtime
+  runtime,
 });
 
-const result = await agent.run({
-  input: "Refund order 77, it arrived broken.",
-  user: { userId: "u-42", tenantId: "acme", permissions: ["payments.refund"] },
-});
-
-if (result.status === "WAITING_FOR_APPROVAL") {
-  // …later, in another request or process:
-  await agent.resume({ runId: result.runId, approvals: [{ approvalId: result.pendingApprovals[0]!.approvalId, decision: "approved" }] });
-}
+const result = await agent.run({ input: "Refund order 77", user });
+// result.status: COMPLETED | WAITING_FOR_APPROVAL | FAILED | …
 ```
 
-Every tool call goes through the same deterministic pipeline, and every stage emits a typed event:
+## Table of contents
 
-```
-model requests tool ─▶ parse ─▶ validate ─▶ authorize ─▶ approval ─▶ rate limit ─▶ idempotency
-                    ─▶ concurrency ─▶ execute (timeout · retry) ─▶ validate output ─▶ audit ─▶ tool-result guardrails
-```
+- [Find what you need](#find-what-you-need)
+- [Quickstart](#quickstart)
+- [Core concepts](#core-concepts)
+- [Features](#features)
+- [Packages](#packages)
+- [Examples](#examples)
+- [Architecture](#architecture)
+- [When to use it](#when-to-use-it)
+- [FAQ](#faq)
+- [Repository map](#repository-map)
+- [Development](#development)
+- [Status and roadmap](#status-and-roadmap)
+- [Contributing, security, license](#contributing)
 
-## Features
+## Find what you need
 
-| Area | What you get | Package |
-| --- | --- | --- |
-| **Runtime** | Agent definition, run loop, explicit state, typed events, error model, limits (steps, tool calls, tokens, cost, time), cancellation, streaming, resume (approve / modify / reject / escalate), crash recovery | `core` |
-| **Models** | Provider contract with capability metadata; Anthropic (official SDK) and OpenAI-compatible adapters (OpenAI, OpenRouter, vLLM, Ollama, Gemini-compatible); streaming; model router; circuit breaker, rate limit, fallback | `llm`, `provider-anthropic` |
-| **Tools** | Zod schemas, deterministic authorization, argument-bound human approval, timeouts, retries, rate limits, idempotency, concurrency, audit, HTTP tools with SSRF protection | `tools`, `security` |
-| **Structured output** | JSON Schema response format, validation, correction loop | `core` |
-| **Context** | Token budgets, ranked context items with provenance, truncation, summarization | `context` |
-| **Knowledge / RAG** | Chunking, embeddings, vector + BM25 + hybrid search, reranking, metadata filters, tenant scoping, citations | `knowledge` |
-| **Memory** | Conversation, user, entity, episodic and semantic memory with write policies, ownership, TTL, forget | `memory` |
-| **Planning & orchestration** | Validated DAG plans, model or static planners, parallel workers, retries, re-planning | `orchestration` |
-| **Reflection** | Rule, citation, LLM-critic and cross-agent verifiers with bounded correction | `core`, `orchestration` |
-| **Multi-agent** | Supervisor, delegation with depth limits, pipeline, parallel | `orchestration` |
-| **Security** | Guardrails (PII, prompt injection, secrets, content), RBAC, ABAC, tenant isolation, data classification, egress control, secrets, identity | `security` |
-| **Observability** | OpenTelemetry spans and metrics, redaction, structured logs, cost tracking, run inspection, local dashboard | `observability` |
-| **Evaluation** | Golden datasets, 12 evaluators including LLM judge, thresholds, regression comparison | `evaluation` |
-| **Production** | PostgreSQL/SQLite state, pgvector, Redis stores, durable queues with leases, workers with recovery, service API, health checks, config validation | `production` |
-| **Skills** | Reusable capabilities with instructions, tools, permissions, verifiers, dependencies and evaluation cases | `core` |
-| **MCP** | MCP server tools as validated, authorized, audited framework tools | `mcp` |
-| **Sandbox** | Workspace-confined file tools and allow-listed commands without a shell | `sandbox` |
-| **Developer experience** | `agent create / dev / test / evaluate / inspect / trace / dashboard / validate`, JSON agent manifests, offline test models | `cli`, `core/testing` |
+| I want to… | Use | Package | Guide |
+| --- | --- | --- | --- |
+| Build my first agent | `defineAgent`, `createRuntime` | `core` | [Getting started](./docs/getting-started.md) |
+| Give an agent tools (functions) | `defineTool`, `ToolRuntime` | `tools` | [Tools](./docs/tools.md) |
+| Control who may call which tool | `permissionPolicy`, `rbacPolicy`, `abacPolicy` | `tools`, `security` | [Security](./docs/security.md) |
+| Require human approval for risky actions | `approval: { required }`, `agent.resume()` | `tools`, `core` | [Agents › Human approval](./docs/agents.md#human-approval) |
+| Use Claude, OpenAI or a local model | `anthropicProvider`, `openAICompatibleProvider` | `provider-anthropic`, `llm` | [Models](./docs/models.md) |
+| Pick a model automatically by cost or capability | `createModelRouter` | `llm` | [Models › Router](./docs/models.md#model-router) |
+| Stream tokens to a UI | `agent.stream()` | `core` | [Agents › Streaming](./docs/agents.md#streaming) |
+| Get typed JSON output | `output: zodSchema` | `core` | [Agents › Structured output](./docs/agents.md#structured-output) |
+| Answer from documents with citations (RAG) | `createKnowledgeBase` | `knowledge` | [Knowledge](./docs/knowledge.md) |
+| Remember users and conversations | `createMemory` | `memory` | [Memory](./docs/memory.md) |
+| Keep prompts within the context window | `createContextEngine` | `context` | [Context](./docs/context.md) |
+| Check answers before returning them | `citationVerifier`, `llmCritic`, `ruleVerifier` | `core` | [Reflection](./docs/reflection.md) |
+| Split work across several agents | `defineOrchestrator`, `supervisor` | `orchestration` | [Orchestration](./docs/orchestration.md), [Multi-agent](./docs/multi-agent.md) |
+| Block PII, prompt injection or leaked secrets | `piiGuardrail`, `promptInjectionGuardrail` | `security` | [Guardrails](./docs/guardrails.md) |
+| Call external APIs safely (SSRF protection) | `defineHttpTool`, `createEgressPolicy` | `security` | [Security › Egress](./docs/security.md#egress-and-ssrf) |
+| Use tools from an MCP server | `mcpTools` | `mcp` | [MCP](./docs/mcp.md) |
+| Let an agent read/write files or run commands safely | `workspaceTools`, `commandTool` | `sandbox` | [Sandbox](./docs/sandbox.md) |
+| Package reusable capabilities | `defineSkill` | `core` | [Skills](./docs/skills.md) |
+| Trace runs, track cost, see a dashboard | `openTelemetrySink`, `CostTracker`, `agent dashboard` | `observability` | [Observability](./docs/observability.md) |
+| Test agent quality and catch regressions | `defineEvaluation`, `evaluators` | `evaluation` | [Evaluation](./docs/evaluation.md) |
+| Run agents as a durable service | `AgentService`, `AgentWorker`, PostgreSQL stores | `production` | [Production](./docs/production.md) |
+| Scaffold, run and debug from the terminal | `agent create / dev / trace` | `cli` | [CLI](./docs/cli.md) |
+| Understand a failure | error codes, run inspection | — | [Troubleshooting](./docs/troubleshooting.md) |
 
-## Getting started
+## Quickstart
 
-The packages are not published to npm yet ([naming is an open decision](./docs/decisions/014-package-identity.md)). Work from source:
+Requires **Node.js ≥ 20.3** (≥ 22.5 for the SQLite adapters) and **pnpm 10** (via Corepack). The packages are not on npm yet, so run from source:
 
 ```bash
 git clone https://github.com/Abdelrahman-sadek/agents-framework.git
 cd agents-framework
-corepack enable        # pnpm 10
+corepack enable
 pnpm install
-pnpm check             # typecheck + lint + tests
-pnpm examples          # run all six examples offline
+pnpm examples          # runs all six examples offline, no API key needed
 ```
 
-Requires Node.js ≥ 20.3 (≥ 22.5 for the SQLite adapters). All examples run offline with deterministic stand-in models, so no API key is needed. Set `ANTHROPIC_API_KEY` and swap in `anthropicProvider()` to use Claude.
+A complete agent with one tool:
 
-Next: **[Getting started guide →](./docs/getting-started.md)**
+```ts
+import { createRuntime, defineAgent } from "@agent-framework/core";
+import { models } from "@agent-framework/llm";
+import { anthropicProvider } from "@agent-framework/provider-anthropic";
+import { ToolRuntime, defineTool } from "@agent-framework/tools";
+import { z } from "zod";
+
+const getWeather = defineTool({
+  name: "get_weather",
+  description: "Current weather for a city",
+  input: z.object({ city: z.string() }),
+  permissions: ["weather.read"],
+  execute: async ({ city }) => ({ city, temperatureC: 21 }),
+});
+
+const runtime = createRuntime({
+  providers: [anthropicProvider()],   // reads ANTHROPIC_API_KEY
+  tools: new ToolRuntime(),           // the only path from model to execute()
+});
+
+const agent = defineAgent({
+  name: "weather-assistant",
+  model: models.anthropic("claude-opus-5"),
+  instructions: "Answer weather questions using the tool.",
+  tools: [getWeather],
+  permissions: ["weather.read"],
+  runtime,
+});
+
+const result = await agent.run({
+  input: "What's the weather in Cairo?",
+  user: { userId: "u-1", tenantId: "acme", permissions: ["weather.read"] },
+});
+console.log(result.status, result.output);
+```
+
+To use a local model instead, set `providers: [openAICompatibleProvider({ id: "ollama", baseURL: "http://localhost:11434/v1" })]` and `model: models.local("ollama", "llama3.1:8b")`.
+
+Next: the [getting started guide](./docs/getting-started.md), or copy an [example](#examples).
+
+## Core concepts
+
+| Concept | One line |
+| --- | --- |
+| **Agent** | A model, instructions, tools, permissions and limits (`defineAgent`). A definition, not a process. |
+| **Runtime** | Runs agents: the model/tool loop, limits, retries, state, events (`createRuntime`). No globals. |
+| **Tool** | A typed function the model may *request* (`defineTool`). Executed only by the `ToolRuntime`. |
+| **Run** | One execution with explicit, serializable state. Ends in a status, never a thrown error. |
+| **Principal** | The user an agent acts for (id, tenant, roles, permissions). Every authorization uses it. |
+| **Approval** | A paused tool call awaiting a human: approve, modify, reject or escalate, then `resume()`. |
+| **Context provider** | Contributes knowledge or memory to a run, with provenance for citations. |
+| **Guardrail / Verifier** | Deterministic checks on input, tool results and output; checks on the final answer. |
+| **Event** | A typed, sequenced record of everything that happened; feeds tracing, logs, cost and audit. |
+| **Port / adapter** | Interfaces (`LLMProvider`, `RunStateStore`, `VectorStore`…) and their swappable implementations. |
+
+## Features
+
+| Area | Highlights |
+| --- | --- |
+| **Runtime** | Run loop with limits on steps, tool calls, tokens, cost and time; cancellation; streaming; resume; crash recovery |
+| **Tools** | Zod schemas; deterministic authorization (agent **and** user permissions); approval bound to exact arguments; timeout, retry, rate limit, idempotency, concurrency; audit log |
+| **Models** | Anthropic (official SDK), OpenAI-compatible (OpenAI, OpenRouter, Gemini, vLLM, Ollama); streaming; model router; circuit breaker, rate limit, fallback |
+| **Structured output** | JSON Schema response format, validation, automatic correction |
+| **Knowledge / RAG** | Chunking, embeddings, vector + BM25 + hybrid search, reranking, metadata filters, tenant scoping, citations |
+| **Memory** | Conversation, user, entity, episodic and semantic memory; write policies; ownership; TTL; forget |
+| **Context** | Token budgets, ranked items, truncation, summarization |
+| **Planning & multi-agent** | Validated plans, parallel workers, re-planning, supervisor, delegation with depth limits, pipeline, parallel |
+| **Reflection** | Rule, citation, LLM-critic and cross-agent verifiers with bounded revision |
+| **Security** | PII / prompt-injection / secret-leak guardrails; RBAC, ABAC, tenant isolation, data classification; SSRF-safe HTTP; secrets |
+| **Integrations** | MCP servers as tools; sandboxed workspace files and allow-listed commands; skills |
+| **Observability** | OpenTelemetry spans and metrics, redacted logs, cost by tenant/user/model, run inspection, local dashboard |
+| **Evaluation** | Datasets, 12 evaluators including LLM-as-judge, thresholds, regression comparison, CI-friendly CLI |
+| **Production** | PostgreSQL / SQLite / pgvector / Redis adapters, durable queues, workers with recovery, service API, health checks |
+
+## Packages
+
+All packages live in [`packages/`](./packages) and are published under the `@agent-framework/*` working scope.
+
+| Package | What it does | Guide |
+| --- | --- | --- |
+| [`core`](./packages/core) | Agents, runtime, state, events, errors, limits, skills, reflection and guardrail hooks. Zero dependencies | [agents](./docs/agents.md) |
+| [`tools`](./packages/tools) | `defineTool`, `ToolRuntime`, policies, approvals, audit | [tools](./docs/tools.md) |
+| [`llm`](./packages/llm) | Model selectors, OpenAI-compatible adapter, router, gateway wrappers | [models](./docs/models.md) |
+| [`provider-anthropic`](./packages/provider-anthropic) | Claude via the official Anthropic SDK | [models](./docs/models.md) |
+| [`context`](./packages/context) | Context engine | [context](./docs/context.md) |
+| [`knowledge`](./packages/knowledge) | Knowledge bases, retrieval, citations | [knowledge](./docs/knowledge.md) |
+| [`memory`](./packages/memory) | Policy-driven memory | [memory](./docs/memory.md) |
+| [`orchestration`](./packages/orchestration) | Planning, orchestration, multi-agent | [orchestration](./docs/orchestration.md) |
+| [`security`](./packages/security) | Guardrails, policies, egress control, secrets | [security](./docs/security.md) |
+| [`mcp`](./packages/mcp) | MCP servers as framework tools | [mcp](./docs/mcp.md) |
+| [`sandbox`](./packages/sandbox) | Workspace file tools and safe command execution | [sandbox](./docs/sandbox.md) |
+| [`observability`](./packages/observability) | OpenTelemetry, logs, cost, inspection, dashboard | [observability](./docs/observability.md) |
+| [`evaluation`](./packages/evaluation) | Datasets, evaluators, reports | [evaluation](./docs/evaluation.md) |
+| [`production`](./packages/production) | Durable state, queues, workers, service, stores | [production](./docs/production.md) |
+| [`cli`](./packages/cli) | `agent` command and agent manifests | [cli](./docs/cli.md) |
+
+## Examples
+
+Every example runs offline with a deterministic stand-in model: `pnpm example:<name>`.
+
+| Example | Pattern | Run |
+| --- | --- | --- |
+| [hello-agent](./examples/hello-agent) | User → agent → tool → answer, with events and audit | `pnpm example:hello` |
+| [research-agent](./examples/research-agent) | Plan → search → analyze → verify → typed report | `pnpm example:research` |
+| [rag-agent](./examples/rag-agent) | Retrieval with tenant scoping, PII redaction, verified citations | `pnpm example:rag` |
+| [orchestrator](./examples/orchestrator) | Parallel research and data workers, verification worker | `pnpm example:orchestrator` |
+| [approval-agent](./examples/approval-agent) | Human approval: pause → approve → resume, idempotent refund | `pnpm example:approval` |
+| [enterprise-agent](./examples/enterprise-agent) | Everything combined, including RBAC, memory, cost tracking and evaluation | `pnpm example:enterprise` |
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-    App[Application / API] --> Service["AgentService → queue → AgentWorker"]
+    App[Your app / API] --> Service["AgentService → queue → AgentWorker"]
     App --> Agent["defineAgent() / defineOrchestrator()"]
     Service --> Runtime
-    Agent --> Runtime["Agent runtime<br/>run loop · limits · state · events · recovery"]
-    Runtime -->|LLMProvider| LLM["Model gateway<br/>Anthropic · OpenAI-compatible · local"]
-    Runtime -->|ContextManager / ContextProvider| Ctx["Context engine<br/>knowledge · memory"]
-    Runtime -->|Guardrail / Verifier| Guard["Guardrails · reflection"]
+    Agent --> Runtime["Agent runtime<br/>loop · limits · state · events · recovery"]
+    Runtime -->|LLMProvider| LLM["Models<br/>Claude · OpenAI-compatible · local · router"]
+    Runtime -->|ContextProvider| Ctx["Context<br/>knowledge · memory"]
+    Runtime -->|Guardrail · Verifier| Guard["Guardrails · reflection"]
     Runtime -->|ToolInvoker| Tools["Tool runtime<br/>validate · authorize · approve · execute · audit"]
-    Tools -->|ToolPolicy| Policy["RBAC · ABAC · tenant · decision engine"]
-    Tools --> Ext[(External systems)]
-    Runtime -->|RunStateStore| Store[(PostgreSQL · SQLite)]
-    Runtime -->|EventSink| Obs["OpenTelemetry · logs · cost · evaluation"]
+    Tools -->|ToolPolicy| Policy["RBAC · ABAC · tenant"]
+    Tools --> Ext[("APIs · MCP · sandbox")]
+    Runtime -->|RunStateStore| Store[("PostgreSQL · SQLite")]
+    Runtime -->|EventSink| Obs["OpenTelemetry · logs · cost · dashboard"]
 ```
 
-The runtime only talks to ports, so everything at the end of an arrow is replaceable. See the [architecture overview](./docs/architecture/README.md) and the [core runtime](./docs/architecture/core-runtime.md).
+Every tool call follows the same deterministic pipeline:
 
-## Packages
+```
+model requests tool → parse → validate → authorize → approval → rate limit → idempotency
+                    → execute (timeout · retry) → validate output → audit → tool-result guardrails → model
+```
 
-| Package | Description | Guide |
-| --- | --- | --- |
-| [`@agent-framework/core`](./packages/core) | Agents, runtime, state, events, errors, limits, ports, reflection and guardrail hooks | [agents](./docs/agents.md) |
-| [`@agent-framework/tools`](./packages/tools) | `defineTool`, `ToolRuntime`, policies, audit | [tools](./docs/tools.md) |
-| [`@agent-framework/llm`](./packages/llm) | Model selectors, OpenAI-compatible adapter, gateway wrappers | [models](./docs/models.md) |
-| [`@agent-framework/provider-anthropic`](./packages/provider-anthropic) | Claude via the official Anthropic SDK | [models](./docs/models.md) |
-| [`@agent-framework/context`](./packages/context) | Context engine | [context](./docs/context.md) |
-| [`@agent-framework/knowledge`](./packages/knowledge) | Knowledge bases and retrieval | [knowledge](./docs/knowledge.md) |
-| [`@agent-framework/memory`](./packages/memory) | Policy-driven memory | [memory](./docs/memory.md) |
-| [`@agent-framework/orchestration`](./packages/orchestration) | Planning, orchestration, multi-agent | [orchestration](./docs/orchestration.md) |
-| [`@agent-framework/security`](./packages/security) | Guardrails, policies, egress, secrets | [security](./docs/security.md) |
-| [`@agent-framework/observability`](./packages/observability) | OpenTelemetry, logs, cost, inspection | [observability](./docs/observability.md) |
-| [`@agent-framework/evaluation`](./packages/evaluation) | Datasets, evaluators, reports | [evaluation](./docs/evaluation.md) |
-| [`@agent-framework/production`](./packages/production) | Durable state, queues, workers, service | [production](./docs/production.md) |
-| [`@agent-framework/mcp`](./packages/mcp) | MCP servers as framework tools | [mcp](./docs/mcp.md) |
-| [`@agent-framework/sandbox`](./packages/sandbox) | Workspace and command tools | [sandbox](./docs/sandbox.md) |
-| [`@agent-framework/cli`](./packages/cli) | `agent` CLI and manifests | [cli](./docs/cli.md) |
+Deep dive: [architecture overview](./docs/architecture/README.md) · [core runtime](./docs/architecture/core-runtime.md) · [events](./docs/architecture/events.md) · [errors](./docs/architecture/errors.md) · [decisions (ADRs)](./docs/decisions/README.md).
 
-## Examples
+## When to use it
 
-| Example | Shows |
-| --- | --- |
-| [`hello-agent`](./examples/hello-agent) | User → Agent → Tool → Answer, events and audit |
-| [`research-agent`](./examples/research-agent) | Model-proposed plan, search tool, typed report, verification |
-| [`rag-agent`](./examples/rag-agent) | Hybrid retrieval, tenant scoping, PII redaction, verified citations |
-| [`orchestrator`](./examples/orchestrator) | Parallel research and data workers, verification worker |
-| [`approval-agent`](./examples/approval-agent) | Approval predicate, pause, resume, idempotent side effects |
-| [`enterprise-agent`](./examples/enterprise-agent) | Everything combined: planning, tools, RAG, memory, workers, reflection, guardrails, RBAC, cost tracking, evaluation |
+**A good fit when you need:**
 
-## Documentation
+- agents acting on behalf of real users, with per-user and per-tenant permissions;
+- actions with consequences (payments, data changes, emails) that need approvals, idempotency and an audit trail;
+- budgets and limits you can prove are enforced;
+- freedom to switch between model vendors or run models locally;
+- durable runs that survive restarts and wait days for a human.
 
-- **Guides:** [Getting started](./docs/getting-started.md) · [Agents](./docs/agents.md) · [Tools](./docs/tools.md) · [Models](./docs/models.md) · [Skills](./docs/skills.md) · [MCP](./docs/mcp.md) · [Sandbox](./docs/sandbox.md) · [Context](./docs/context.md) · [Knowledge](./docs/knowledge.md) · [Memory](./docs/memory.md) · [Planning](./docs/planning.md) · [Reflection](./docs/reflection.md) · [Orchestration](./docs/orchestration.md) · [Multi-agent](./docs/multi-agent.md) · [Security](./docs/security.md) · [Guardrails](./docs/guardrails.md) · [Observability](./docs/observability.md) · [Evaluation](./docs/evaluation.md) · [Production](./docs/production.md) · [CLI](./docs/cli.md) · [Troubleshooting](./docs/troubleshooting.md)
-- **Architecture:** [Overview](./docs/architecture/README.md) · [Core runtime](./docs/architecture/core-runtime.md) · [Public API](./docs/architecture/public-api.md) · [Events](./docs/architecture/events.md) · [Errors](./docs/architecture/errors.md) · [Configuration](./docs/architecture/configuration.md) · [Extension points](./docs/architecture/extension-points.md)
-- **Security:** [Model and controls](./docs/security/README.md) · [Threat model](./docs/security/threat-model.md)
-- **Decisions:** [ADRs](./docs/decisions/README.md) · [Open questions](./docs/decisions/open-questions.md)
+**Probably overkill when:**
 
-## Roadmap
+- you need a single prompt → completion call (use a provider SDK directly);
+- you are prototyping a chat UI and want the fewest lines possible;
+- you need a hosted, no-code agent builder.
 
-All 14 phases of the original plan are implemented. The post-plan items are done too: streaming, skills, model router, approval escalation, pgvector and Redis stores, MCP, sandbox tools and a dashboard. Next up: publishing 0.x to npm, a container sandbox runner, a Temporal worker and a native Gemini adapter. See [docs/roadmap.md](./docs/roadmap.md).
+## FAQ
+
+<details>
+<summary><b>Which LLMs does it support?</b></summary>
+
+Claude through `@agent-framework/provider-anthropic` (official SDK; Bedrock, Vertex and Foundry clients can be injected). OpenAI, OpenRouter, Gemini's OpenAI-compatible endpoint, Azure OpenAI, vLLM, Ollama, LM Studio and llama.cpp server through `openAICompatibleProvider`. Any other model: implement the small `LLMProvider` interface. See [Models](./docs/models.md).
+</details>
+
+<details>
+<summary><b>Can the model bypass permissions or approvals?</b></summary>
+
+No. The model only produces a tool *request*. The `ToolRuntime` validates the arguments, checks the agent's and the user's permissions with deterministic policies (fail closed), requires approval where configured (bound to the exact arguments, with expiry), then executes and audits. Tools not registered on the agent can never run. See [Tools](./docs/tools.md) and the [threat model](./docs/security/threat-model.md).
+</details>
+
+<details>
+<summary><b>How is this different from LangChain, the OpenAI Agents SDK or the Vercel AI SDK?</b></summary>
+
+Those are excellent for building agents and AI features quickly. This framework focuses on the enterprise runtime concerns around them: deterministic authorization with user + agent + tenant identity, argument-bound approvals with durable pause/resume, hard budgets, multi-tenant RAG and memory, audit, crash recovery, and evaluation gates. All of it is provider-independent, with zero dependencies in the core. It is not a wrapper around another framework.
+</details>
+
+<details>
+<summary><b>Does it work with MCP?</b></summary>
+
+Yes. `mcpTools()` turns any MCP server's tools into framework tools, so they get local schema validation, permissions, approvals and audit like any other tool. See [MCP](./docs/mcp.md).
+</details>
+
+<details>
+<summary><b>Is it production-ready?</b></summary>
+
+The runtime, tools, security and production packages have extensive tests (281 across 15 packages), durable PostgreSQL/SQLite state, queues with leases, crash recovery and health checks. The project is **0.x**: APIs may still change in minor versions, and packages are not yet published to npm. See [Production](./docs/production.md) and the [roadmap](./docs/roadmap.md).
+</details>
+
+<details>
+<summary><b>Can I run it without an API key or network?</b></summary>
+
+Yes. All examples and tests use deterministic stand-in models (`createScriptedProvider`, `createRuleProvider` from `@agent-framework/core/testing`), and `hashingEmbedder` provides local embeddings.
+</details>
+
+<details>
+<summary><b>How do I see what an agent did and what it cost?</b></summary>
+
+Every run emits typed events. Send them to OpenTelemetry (`openTelemetrySink`), logs (`logSink`), a cost report (`CostTracker`), or the local dashboard (`agent dashboard --events events.jsonl`). See [Observability](./docs/observability.md).
+</details>
+
+## Repository map
+
+```text
+packages/          15 packages (see Packages above); each has src/, tests next to sources, README.md
+examples/          6 runnable examples (offline)
+docs/              guides (one per subsystem), architecture/, decisions/ (ADRs), security/, roadmap.md
+  README.md        documentation index
+llms.txt           machine-readable index for AI assistants and agents
+AGENTS.md          instructions for coding agents working in this repository
+CHANGELOG.md       release notes
+```
+
+## Development
+
+```bash
+pnpm install
+pnpm check               # typecheck + lint + all tests
+pnpm test --project core # one package
+pnpm examples            # run every example
+pnpm build               # emit dist/ for all packages
+```
+
+Tests use Vitest and import sources directly, so no build step is needed. Details: [CONTRIBUTING.md](./CONTRIBUTING.md) and [AGENTS.md](./AGENTS.md).
+
+## Status and roadmap
+
+- ✅ All 14 planned phases, plus streaming, skills, model router, MCP, sandbox, dashboard, pgvector and Redis stores.
+- ⏭️ Next: publish 0.x to npm, a container sandbox runner, a Temporal worker, a native Gemini adapter.
+
+Details: [docs/roadmap.md](./docs/roadmap.md) · [CHANGELOG.md](./CHANGELOG.md).
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first. Changes to core contracts or the public API need an [ADR](./docs/decisions/README.md).
+Contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md). Changes to public contracts need an [ADR](./docs/decisions/README.md).
 
 ## Security
 
-Please report vulnerabilities privately as described in [SECURITY.md](./SECURITY.md).
+Please report vulnerabilities privately; see [SECURITY.md](./SECURITY.md).
 
 ## License
 
 [Apache-2.0](./LICENSE)
+
+<sub>Keywords: TypeScript AI agent framework, Node.js LLM agents, tool calling, function calling, RAG, retrieval-augmented generation, agent memory, multi-agent orchestration, human-in-the-loop approval, guardrails, prompt injection defense, MCP, Model Context Protocol, OpenTelemetry, LLM evaluation, Claude, Anthropic, OpenAI, Ollama, enterprise AI.</sub>

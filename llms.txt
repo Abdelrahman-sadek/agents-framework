@@ -1,0 +1,54 @@
+# Agent Framework
+
+> TypeScript/Node.js framework for building production AI agents. The model requests actions; deterministic code authorizes, executes, limits and audits them. Provider-independent (Claude, OpenAI-compatible, local models), with tool calling, human approval, RAG, memory, multi-agent orchestration, guardrails, MCP, sandboxed tools, OpenTelemetry observability, evaluation and a durable production runtime. Monorepo of 15 packages under @agent-framework/*. Apache-2.0. Status: 0.x, run from source (not yet on npm).
+
+Key facts:
+- Entry points: defineAgent + createRuntime (@agent-framework/core), defineTool + ToolRuntime (@agent-framework/tools).
+- Runs never throw for model/tool failures; check result.status (COMPLETED, FAILED, WAITING_FOR_APPROVAL, CANCELLED, TIMED_OUT, APPROVAL_EXPIRED).
+- Tool calls require the permission on both the agent and the user; approvals are bound to exact arguments and resumed with agent.resume().
+- Offline testing: createScriptedProvider / createRuleProvider from @agent-framework/core/testing.
+- Commands: pnpm install, pnpm check, pnpm examples.
+
+## Start here
+- [README](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/README.md): overview, "find what you need" table, quickstart, FAQ
+- [Getting started](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/getting-started.md): install, first agent, connecting a model
+- [Documentation index](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/README.md): all guides
+
+## Guides
+- [Agents](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/agents.md): defineAgent, run, limits, streaming, structured output, approvals, recovery
+- [Tools](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/tools.md): defineTool, ToolRuntime pipeline, permissions, approval, retries, idempotency, audit
+- [Models](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/models.md): Anthropic and OpenAI-compatible adapters, streaming, model router, fallback
+- [Skills](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/skills.md): reusable capabilities
+- [Context](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/context.md): token budgets and context assembly
+- [Knowledge / RAG](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/knowledge.md): knowledge bases, hybrid search, citations
+- [Memory](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/memory.md): policy-driven memory with ownership and TTL
+- [Planning](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/planning.md), [Orchestration](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/orchestration.md), [Multi-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/multi-agent.md)
+- [Reflection](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/reflection.md): verifiers and correction loops
+- [Security](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/security.md) and [Guardrails](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/guardrails.md)
+- [MCP](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/mcp.md) and [Sandbox tools](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/sandbox.md)
+- [Observability](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/observability.md): OpenTelemetry, cost tracking, dashboard
+- [Evaluation](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/evaluation.md): datasets, evaluators, regression tests
+- [Production](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/production.md): durable state, queues, workers, PostgreSQL/SQLite/pgvector/Redis
+- [CLI](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/cli.md): agent create/dev/test/evaluate/inspect/trace/dashboard/validate
+- [Troubleshooting](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/troubleshooting.md): error codes and fixes
+
+## Reference
+- [Public API](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/architecture/public-api.md): every export by package
+- [Core runtime](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/architecture/core-runtime.md): run loop, state, durability boundary
+- [Events](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/architecture/events.md) and [Errors](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/architecture/errors.md)
+- [Extension points](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/architecture/extension-points.md): ports and adapters
+- [Architecture decisions](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/decisions/README.md)
+- [Threat model](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/security/threat-model.md)
+
+## Examples
+- [hello-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/hello-agent/index.ts): minimal agent with a tool
+- [rag-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/rag-agent/index.ts): retrieval with citations
+- [research-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/research-agent/index.ts): planning and typed report
+- [orchestrator](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/orchestrator/index.ts): parallel workers
+- [approval-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/approval-agent/index.ts): human-in-the-loop
+- [enterprise-agent](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/examples/enterprise-agent/index.ts): everything combined
+
+## Optional
+- [Roadmap](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/docs/roadmap.md)
+- [Changelog](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/Abdelrahman-sadek/agents-framework/blob/main/CONTRIBUTING.md)
