@@ -63,7 +63,21 @@ importers:
         specifier: workspace:*
         version: link:../core
 
-  packages/memory: {}
+  packages/memory:
+    dependencies:
+      '@agent-framework/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agent-framework/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.1.0
+        version: 4.6.5
+    devDependencies:
+      '@agent-framework/knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
 
   packages/observability: {}
 

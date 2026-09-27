@@ -554,6 +554,7 @@ class DefaultAgentRuntime implements AgentRuntime {
           input: state.input,
           query,
           ...(state.user === undefined ? {} : { user: state.user }),
+          metadata: state.metadata,
           signal: exec.signal,
           emit: emitter.emit,
         }),

@@ -1,7 +1,7 @@
 /**
- * @agent-framework/memory — reserved package.
- *
- * Memory (planned): conversation, user, entity, episodic and semantic memory with policies.
- * See docs/roadmap.md for the phase that implements it.
+ * @agent-framework/memory — memory separate from knowledge.
  */
-export {};
+export { DEFAULT_SECRET_PATTERNS, Memory, createMemory } from "./memory.js";
+export type { MemoryCandidate, MemoryOptions, MemoryPolicy, MemorySearchOptions, StoreResult } from "./memory.js";
+export { InMemoryMemoryStore, scopeMatches } from "./types.js";
+export type { MemoryAccess, MemoryKind, MemoryProvenance, MemoryQuery, MemoryRecord, MemoryScope, MemoryStore } from "./types.js";

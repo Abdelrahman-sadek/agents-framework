@@ -29,6 +29,8 @@ export interface ContextProviderRequest {
   /** Text form of the input, suitable as a retrieval query. */
   query: string;
   user?: Principal;
+  /** Run metadata (e.g. a conversation id). */
+  metadata: Readonly<Record<string, unknown>>;
   signal: AbortSignal;
   emit: EmitFn;
 }

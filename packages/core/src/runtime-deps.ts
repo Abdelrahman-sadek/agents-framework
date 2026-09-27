@@ -5,7 +5,7 @@ export interface Clock {
 
 export interface IdGenerator {
   /** Returns a unique id. `kind` lets implementations add readable prefixes. */
-  next(kind: "run" | "step" | "llm" | "event" | "approval" | "tool"): string;
+  next(kind: "run" | "step" | "llm" | "event" | "approval" | "tool" | (string & {})): string;
 }
 
 export const systemClock: Clock = { now: () => new Date() };
